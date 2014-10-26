@@ -1,0 +1,4 @@
+  $file = <curitem>;
+  $ext = getpathcomponent($file, "ext");
+  $img = readfile($file,b);
+  text "data:image/.$ext;base64,".base64encode($img);

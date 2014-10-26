@@ -1,0 +1,21 @@
+  if( confirm(utf8decode("以内容命名点击是，以INFO_HASH命名点击否"), , , 4) ) {
+   foreach($token, substr(<selitems>,1,strlen(<selitems>)-2), """ """) {
+     $file = readfile($token,b);
+     if( strpos($file,"4:info") == -1 ) { continue; }
+     $temp = regexmatches( $file, "4:name(\d*):" );
+     $pos = strpos( $file, $temp ) + strlen($temp);
+     $length = substr( $temp, 6, strlen($temp) - 7 );
+     $name = substr( $file, $pos, $length );
+     renameitem( utf8decode($name).".torrent", $token, 3, "-01" );
+   }
+  }
+  else {
+   foreach($token, substr(<selitems>,1,strlen(<selitems>)-2), """ """) {
+     $file = readfile($token,b);
+     $pos = strpos($file,"4:info");
+     if( $pos == -1 ) { continue; }
+     $file = substr( $file, $pos+6, strlen($file) - $pos- 7 );
+     $hash = recase(hash("sha1", $file), "upper");
+     renameitem( $hash.".torrent", $token, 3, "-01" );
+   }
+  }

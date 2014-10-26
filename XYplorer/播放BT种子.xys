@@ -1,0 +1,17 @@
+  $file = readfile(<curitem>,b);
+  $pos = strpos($file,"4:info");
+  if( $pos != -1 ) {
+   $file = substr( $file, $pos+6, strlen($file) - $pos- 7 );
+    /*
+    *host list:
+    *http://vod.dbanklm.com/index.php#!u=
+    *http://vod.7ibt.com/index.php?url=
+    *http://www.dychao.com/play.html?url= - https://dychao.github.io/blog/ckplayer.swf
+    */
+   $host = "http://www.dychao.com/play.html?url=";
+   $link = $host."magnet%3A%3Fxt%3Durn%3Abtih%3A".recase(hash("sha1", $file), "upper"), , , utf8decode("磁力链接");
+   goto $link;
+  }
+  else {
+   msg utf8decode("不是BT种子文件！");
+  }

@@ -1,0 +1,15 @@
+  $clipboard = <clipboard>;
+  $content = "thunder://";
+  if( strpos(<clipboard>,"thunder://") == 0 ) {
+   $content = $clipboard;
+  }
+  $thunder = input(utf8decode("请输入一个迅雷专用链接，将被转换为普通下载链接"), utf8decode("链接以thunder://开头"), $content);
+  if( strpos($thunder,"thunder://") != 0 ) {
+   msg utf8decode("不是迅雷专用链接！");
+  }
+  else {
+   $thunder = substr($thunder,10);
+   $thunder = utf8decode(base64decode($thunder,0));
+   $thunder = substr($thunder,2,strlen($thunder)-4);
+   text $thunder;
+  }

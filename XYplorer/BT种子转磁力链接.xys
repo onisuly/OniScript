@@ -1,0 +1,26 @@
+  if( <selitems> == """<curitem>""" ) {
+   $file = readfile(,b);
+   $pos = strpos($file,"4:info");
+   if( $pos != -1 ) {
+     $file = substr( $file, $pos+6, strlen($file) - $pos- 7 );
+     text "magnet:?xt=urn:btih:".recase(hash("sha1", $file), "upper"), , , utf8decode("磁力链接");
+   }
+   else {
+     msg utf8decode("不是BT种子文件！");
+   }
+  }
+  else {
+   $magnets = "";
+   foreach($token, substr(<selitems>,1,strlen(<selitems>)-2), """ """) {
+     $file = readfile($token,b);
+     $pos = strpos($file,"4:info");
+     $file = substr( $file, $pos+6, strlen($file) - $pos- 7 );
+     if( $magnets == "" ) {
+     $magnets = $pos == -1 ? (utf8decode("不是BT种子文件！ - $token")) : ("magnet:?xt=urn:btih:".recase(hash("sha1", $file), "upper")." - $token");
+     }
+     else {
+       $magnets = $magnets."|".$pos == -1 ? (utf8decode("不是BT种子文件！ - $token")) : ("magnet:?xt=urn:btih:".recase(hash("sha1", $file), "upper")." - $token");
+     }
+   }
+   copytext inputselect(utf8decode("磁力链接"), $magnets , , 16, , 52%, 41.5%, );
+  }

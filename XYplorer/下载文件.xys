@@ -1,0 +1,12 @@
+  $clipboard = <clipboard>;
+  $content = "http://";
+  if( strpos(<clipboard>,"http://") == 0 || strpos(<clipboard>,"ftp://") == 0 ) {
+   $content = $clipboard;
+  }
+  $link = input(utf8decode("请输入一个下载的链接"), utf8decode("支持http，ftp协议") , $content);
+  if( strpos($link,"http://") == 0 || strpos($link,"ftp://") == 0 ) {
+   download $link;
+  }
+  else {
+   msg utf8decode("仅支持http，ftp协议下载！");
+  }

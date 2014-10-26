@@ -1,0 +1,15 @@
+  $clipboard = <clipboard>;
+  $content = "http://";
+  if( strpos(<clipboard>,"http://") == 0 || strpos(<clipboard>,"ftp://") == 0 || strpos(<clipboard>,"thunder://") == 0 || strpos(<clipboard>,"magnet:?") == 0 || strpos(<clipboard>,"ed2k://") == 0 ) {
+   $content = $clipboard;
+  }
+  $video = input(utf8decode("请输入一个视频的链接"), utf8decode("支持http，ftp，迅雷专链，磁力链接，电驴链接") , $content);
+  /*
+  *host list:
+  *http://vod.dbanklm.com/index.php#!u=
+  *http://vod.7ibt.com/index.php?url=
+  *http://www.dychao.com/play.html?url= - https://dychao.github.io/blog/ckplayer.swf
+  */
+  $host = "http://www.dychao.com/play.html?url=";
+  $link = $host.( replacelist($video,":,/,?,=,|","%3A,%2F,%3F,%3D,%7C",",") );
+  goto $link;
