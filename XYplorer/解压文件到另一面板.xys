@@ -1,5 +1,7 @@
     end <curitem> == "", utf8decode("未选中任何文件！");
     $dst = "";
+    $pwd = "";
+
     if( substr(<xypane>, strlen(<xypane>) - 1, 1) == 1 ) {
         $dst = "<path 2>\<curbase>";
     }
@@ -15,17 +17,23 @@
             msg utf8decode("命名冲突，不能创建文件夹$dst！");
         }
         else {
-            run """<xypath>\Oni\app\7-Zip\7za.exe"" x -aoa -o""$dst"" ""<curitem>""", , , 0;
+            if( strpos(runret("""<xypath>\Oni\app\7-Zip\7za.exe"" t ""<curitem>"""), "Enter password (will not be echoed)") != -1 ) {
+                $pwd = input(utf8decode("输入密码"), utf8decode("请输入压缩文件的解压密码") , "");
+                while( strpos(runret("""<xypath>\Oni\app\7-Zip\7za.exe"" t -p$pwd ""<curitem>"""), "Error : Data Error in encrypted file. Wrong password?") != -1 ) {
+                    $pwd = input(utf8decode("密码错误"), utf8decode("请重新输入压缩文件的解压密码") , "");
+                }
+            }
+            run """<xypath>\Oni\app\7-Zip\7za.exe"" x -aoa -p$pwd -o""$dst"" ""<curitem>""", , 1, 0;
         }
     }
     elseif( strpos(runret("""<xypath>\Oni\app\UnRAR\UnRAR.exe"" t ""<curitem>"""), "is not RAR archive") == -1 ) {
         $curitem = "<curitem>";
         if( exists("$dst") == 0 ) {
             new ("$dst", "dir");
-            run """<xypath>\Oni\app\UnRAR\UnRAR.exe"" x ""$curitem"" -o+ ""$dst""", , , 0;
+            run """<xypath>\Oni\app\UnRAR\UnRAR.exe"" x ""$curitem"" -o+ ""$dst""", , 1, 0;
         }
         elseif( exists("$dst") == 2 ) {
-            run """<xypath>\Oni\app\UnRAR\UnRAR.exe"" x ""$curitem"" -o+ ""$dst""", , , 0;
+            run """<xypath>\Oni\app\UnRAR\UnRAR.exe"" x ""$curitem"" -o+ ""$dst""", , 1, 0;
         }
         else {
             msg utf8decode("命名冲突，不能创建文件夹$dst！");
