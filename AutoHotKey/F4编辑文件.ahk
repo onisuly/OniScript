@@ -17,3 +17,4 @@ else {
     send {F4}
     Hotkey F4, On
 }
+Return

@@ -1,27 +1,27 @@
-  end <curitem> == "", utf8decode("未选中任何文件！");
-  $dst = "<curpath>\<curbase>";
+    end <curitem> == "", utf8decode("未选中任何文件！");
+    $dst = "<curpath>\<curbase>";
 
-  if( strpos(runret("""<xypath>\Oni\app\7-Zip\7za.exe"" t ""<curitem>"""), "Error: Can not open file as archive") == -1 ) {
-   if( exists("$dst") == 1 ) {
-     msg utf8decode("命名冲突，不能创建文件夹$dst！");
-   }
-   else {
-     run """<xypath>\Oni\app\7-Zip\7za.exe"" x -aoa -o""$dst"" ""<curitem>""", , , 0;
-   }
-  }
-  elseif( strpos(runret("""<xypath>\Oni\app\UnRAR\UnRAR.exe"" t ""<curitem>"""), "is not RAR archive") == -1 ) {
-   $curitem = "<curitem>";
-   if( exists("$dst") == 0 ) {
-     new ("$dst", "dir");
-     run """<xypath>\Oni\app\UnRAR\UnRAR.exe"" x ""$curitem"" -o+ ""$dst""", , , 0;
-   }
-   elseif( exists("$dst") == 2 ) {
-     run """<xypath>\Oni\app\UnRAR\UnRAR.exe"" x ""$curitem"" -o+ ""$dst""", , , 0;
-   }
-   else {
-     msg utf8decode("命名冲突，不能创建文件夹$dst！");
-   }
-  }
-  else {
-   msg utf8decode("不支持该文件解压！");
-  }
+    if( strpos(runret("""<xypath>\Oni\app\7-Zip\7za.exe"" t ""<curitem>"""), "Error: Can not open file as archive") == -1 ) {
+        if( exists("$dst") == 1 ) {
+            msg utf8decode("命名冲突，不能创建文件夹$dst！");
+        }
+        else {
+            run """<xypath>\Oni\app\7-Zip\7za.exe"" x -aoa -o""$dst"" ""<curitem>""", , , 0;
+        }
+    }
+    elseif( strpos(runret("""<xypath>\Oni\app\UnRAR\UnRAR.exe"" t ""<curitem>"""), "is not RAR archive") == -1 ) {
+        $curitem = "<curitem>";
+        if( exists("$dst") == 0 ) {
+            new ("$dst", "dir");
+            run """<xypath>\Oni\app\UnRAR\UnRAR.exe"" x ""$curitem"" -o+ ""$dst""", , , 0;
+        }
+        elseif( exists("$dst") == 2 ) {
+            run """<xypath>\Oni\app\UnRAR\UnRAR.exe"" x ""$curitem"" -o+ ""$dst""", , , 0;
+        }
+        else {
+            msg utf8decode("命名冲突，不能创建文件夹$dst！");
+        }
+    }
+    else {
+        msg utf8decode("不支持该文件解压！");
+    }

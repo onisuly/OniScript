@@ -1,2 +1,2 @@
-  end <curitem> == "", utf8decode("未选中任何文件！");
-  run notepad <curitem>;
+    end <curitem> == "", utf8decode("未选中任何文件！");
+    run notepad <curitem>;

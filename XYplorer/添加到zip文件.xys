@@ -1,10 +1,10 @@
-  //zip_add( "<curfolder>.zip" );
-  end <curitem> == "", utf8decode("未选中任何文件！");
-  $name = "";
-  if( <selitems> == """<curitem>""" ) {
-   $name = <curbase>;
-  }
-  else {
-   $name = <curfolder>;;
-  }
-  run """<xypath>\Oni\app\7-Zip\7za.exe"" a -tzip ""$name.zip"" -ssw <selitems>", , , 0;
+    //zip_add( "<curfolder>.zip" );
+    end <curitem> == "", utf8decode("未选中任何文件！");
+    $name = "";
+    if( <selitems> == """<curitem>""" ) {
+        $name = <curbase>;
+    }
+    else {
+        $name = <curfolder>;
+    }
+    run """<xypath>\Oni\app\7-Zip\7za.exe"" a -tzip ""$name.zip"" -ssw <selitems>", , , 0;

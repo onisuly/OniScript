@@ -1,9 +1,9 @@
-  end <curitem> == "", utf8decode("未选中任何文件！");
-  $name = "";
-  if( <selitems> == """<curitem>""" ) {
-   $name = <curbase>;
-  }
-  else {
-   $name = <curfolder>;;
-  }
-  run """<xypath>\Oni\app\7-Zip\7za.exe"" a -t7z ""$name.7z"" -ssw <selitems>", , , 0;
+    end <curitem> == "", utf8decode("未选中任何文件！");
+    $name = "";
+    if( <selitems> == """<curitem>""" ) {
+        $name = <curbase>;
+    }
+    else {
+        $name = <curfolder>;
+    }
+    run """<xypath>\Oni\app\7-Zip\7za.exe"" a -t7z ""$name.7z"" -ssw <selitems>", , , 0;

@@ -1,15 +1,15 @@
-  $clipboard = <clipboard>;
-  $content = "magnet:?";
-  if( strpos(<clipboard>,"magnet:?") == 0 ) {
-   $content = $clipboard;
-  }
-  $link = input(utf8decode("请输入一个磁力链接，将被转换为BT种子"), utf8decode("链接以magnet:?开头，支持多行，每行为一个磁力链接"), $content, m);
-  foreach( $magnet, $link, <crlf> ) {
-   if( strpos($magnet,"magnet:?") == 0 ) {
-     $magnet = recase($magnet, "upper");
-     $magnet = regexmatches($magnet,"btih:[A-Za-z0-9]{40}");
-     $magnet = substr($magnet,5);
-     $magnet = "http://106.186.19.120"."/".substr($magnet,0,2)."/".substr($magnet,-2)."/".$magnet.".torrent";
-     download $magnet;
-   }
-  }
+    $clipboard = <clipboard>;
+    $content = "magnet:?";
+    if( strpos(<clipboard>,"magnet:?") == 0 ) {
+        $content = $clipboard;
+    }
+    $link = input(utf8decode("请输入一个磁力链接，将被转换为BT种子"), utf8decode("链接以magnet:?开头，支持多行，每行为一个磁力链接"), $content, m);
+    foreach( $magnet, $link, <crlf> ) {
+        if( strpos($magnet,"magnet:?") == 0 ) {
+            $magnet = recase($magnet, "upper");
+            $magnet = regexmatches($magnet,"btih:[A-Za-z0-9]{40}");
+            $magnet = substr($magnet,5);
+            $magnet = "http://106.186.19.120"."/".substr($magnet,0,2)."/".substr($magnet,-2)."/".$magnet.".torrent";
+            download $magnet;
+        }
+    }
