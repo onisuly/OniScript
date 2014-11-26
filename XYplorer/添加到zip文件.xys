@@ -2,9 +2,11 @@
     end <curitem> == "", utf8decode("未选中任何文件！");
     $name = "";
     if( <selitems> == """<curitem>""" ) {
-        $name = <curbase>;
+        $name = <curpath>."\".<curbase>.".zip";
     }
     else {
-        $name = <curfolder>;
+        $name = <curpath>."\".<curfolder>.".zip";
     }
-    run """<xypath>\Oni\app\7-Zip\7za.exe"" a -tzip ""$name.zip"" -ssw <selitems>", , , 0;
+    $name = input(utf8decode("压缩文件"), utf8decode("压缩到：") , $name);
+    run """<xypath>\Oni\app\7-Zip\7z.exe"" a -tzip ""$name"" -ssw <selitems>", , 2, 0;
+    beep 2500,120;

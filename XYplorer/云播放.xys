@@ -5,5 +5,5 @@
     }
     $video = input(utf8decode("请输入一个视频的链接"), utf8decode("支持http，ftp，迅雷专链，磁力链接，电驴链接") , $content);
     $host = "http://www.dychao.com/play.html?url=";
-    $link = $host.( replacelist($video,":,/,?,=,|","%3A,%2F,%3F,%3D,%7C",",") );
+    $link = $host.( urlencode(utf8encode($video)) );
     goto $link;
