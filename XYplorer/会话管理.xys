@@ -1,0 +1,1608 @@
+
+/* ####################### */
+/* ### Session Manager ### */
+/* ####################### */
+/*                         */
+/*     by FluxTorpedoe     */
+/* _______________________ */
+
+
+/* version 3.0 RC2 - 2014-10-19 */
+/*    Use/Modify freely    */
+
+
+
+// -----------------------------------------------------------------
+// --- Commands for external access from Catalog, CKS, UDC, etc. ---
+// -----------------------------------------------------------------
+//
+// --- Load a specific session (e.g. "Session Name") ---------------
+//  global $DYN_InpSess; $DYN_InpSess = "Session Name"; load "SessionManager.xys", "_Load";
+//
+// --- Reset current session ---------------------------------------
+//  load "SessionManager.xys", "_Reset";
+//
+// --- Reset layout to default -------------------------------------
+//  load "SessionManager.xys", "_Layout-Reset";
+//
+// --- Save temporary session --------------------------------------
+//  load "SessionManager.xys", "_Save-Temporary";
+
+
+
+
+/* ######################################################################################### */
+/* ############################  FluxTorpedoe's (ir)Rationale  ############################# */
+/* ######################################################################################### */
+// $Var					=	local variable;
+// $CAP_Var			=	global variable;
+// $FULLCAPVAR	=	permanent variable;
+// $*... = any string; $*d_... = delta string (to be added); $*b_... = binary value; $*l_... = list; $*a_...= array; $*n_... = number;
+// - - -
+// e.g. $PRE_Item = Item Name; $PRE_b_Item = Item exists ; $PRE_l_Items = List of items;
+// ----------------------------------------------------------------------------------------- */
+
+
+
+"_Initialize"
+
+//	global $Clock_1; // Timer initialize (to help speed optimization)
+//	$Clock_1 = now("ssfff");
+
+	global $GEN_SM_Version;
+	$GEN_SM_Version = "3.0 RC2";
+
+	end (<xyver> < "14.10.0104"), "<crlf>  Session Manager version: <tab>$GEN_SM_Version  <crlf>  XYplorer minimum required version: <tab>v14.10.0104  <crlf 2>  Current XYplorer version: <tab><xyver>  <crlf 2>  Please use latest Session Manager compatible version: 2.7  <crlf>  or update XYplorer.  <crlf 2>";
+
+	global $GEN_CurScript, $GEN_Ini;
+	$GEN_CurScript = self("file");
+	$IniName = self("base").".ini";
+	$GEN_Ini = self("path")."\".$IniName;
+
+// Use alternate INI
+	if exists("<xydata>\[User]\$IniName") {
+		$GEN_Ini = "<xydata>\[User]\$IniName";
+	}
+
+// On first run, if XY not optimized, propose to update/tweak
+	if (!exists("$GEN_Ini") && !getkey("TabsetsNoPaneActivation", "Settings")) {
+		load("$GEN_CurScript", "_Options-Tweak");
+	}
+
+// Create INI file on first run, or rebuild default INI file if it has been damaged
+	global $DYN_InpSessLay;
+	if !getkey("", "General", $GEN_Ini){
+		setkey("0", "Reserved", "General", $GEN_Ini);
+	}
+	if !getkey("", "Settings", $GEN_Ini){
+		setkey("1", "EnableLayouts", "Settings", $GEN_Ini);
+		setkey("0", "AutoOptimizeTree", "Settings", $GEN_Ini);
+		setkey("0", "AutoSave", "Settings", $GEN_Ini);
+		setkey("0", "Confirmation", "Settings", $GEN_Ini);
+		setkey("0", "SessionListOnTop", "Settings", $GEN_Ini);
+		setkey("1", "InfoPanelPreview", "Settings", $GEN_Ini);
+		setkey("0", "Xtras", "Settings", $GEN_Ini);
+		setkey("0", "LayFallbackDef", "Settings", $GEN_Ini);
+		setkey("0", "StdResetWithLay", "Settings", $GEN_Ini);
+	}
+	if !getkey("", "Layout ¦‡¦-Default-¦‡¦", $GEN_Ini){
+		$DYN_InpSessLay = "¦‡¦-Default-¦‡¦";
+		load "$GEN_CurScript", "_Layout-Save";
+		setkey(toolbar(), "XTRA-Toolbar", "Layout ¦‡¦-Default-¦‡¦", $GEN_Ini);
+		setkey("0", "XTRA-Catalog", "Layout ¦‡¦-Default-¦‡¦", $GEN_Ini);
+		setkey("0", "XTRA-Tags", "Layout ¦‡¦-Default-¦‡¦", $GEN_Ini);
+		setkey("0", "XTRA-TagsList", "Layout ¦‡¦-Default-¦‡¦", $GEN_Ini);
+		setkey("0", "XTRA-FileAssoc", "Layout ¦‡¦-Default-¦‡¦", $GEN_Ini);
+	}
+	if !getkey("", "Layout ¦‡¦-Last-¦‡¦", $GEN_Ini){
+		$DYN_InpSessLay = "¦‡¦-Last-¦‡¦";
+		load "$GEN_CurScript", "_Layout-Save";
+		setkey(toolbar(), "XTRA-Toolbar", "Layout ¦‡¦-Last-¦‡¦", $GEN_Ini);
+		setkey("0", "XTRA-Catalog", "Layout ¦‡¦-Default-¦‡¦", $GEN_Ini);
+		setkey("0", "XTRA-Tags", "Layout ¦‡¦-Default-¦‡¦", $GEN_Ini);
+		setkey("0", "XTRA-TagsList", "Layout ¦‡¦-Default-¦‡¦", $GEN_Ini);
+		setkey("0", "XTRA-FileAssoc", "Layout ¦‡¦-Default-¦‡¦", $GEN_Ini);
+	}
+
+
+// General - RESERVED (not needed anymore, maybe later...)
+	// global $GEN_###;
+	// $GEN_### = getkey("Reserved", "General", $GEN_Ini);
+
+
+// Settings
+	global $STG_EnableLayouts, $STG_AutoOptimizeTree, $STG_AutoSave, $STG_Confirmation, $STG_SessionListOnTop, $STG_InfoPanelPreview, $STG_Xtras, $STG_LayFallbackDef, $STG_StdResetWithLay;
+	$STG_EnableLayouts = getkey("EnableLayouts", "Settings", $GEN_Ini);
+	$STG_AutoOptimizeTree = getkey("AutoOptimizeTree", "Settings", $GEN_Ini);
+	$STG_AutoSave = getkey("AutoSave", "Settings", $GEN_Ini);
+	$STG_Confirmation = getkey("Confirmation", "Settings", $GEN_Ini);
+	$STG_SessionListOnTop = getkey("SessionListOnTop", "Settings", $GEN_Ini);
+	$STG_InfoPanelPreview = getkey("InfoPanelPreview", "Settings", $GEN_Ini);
+	$STG_Xtras = getkey("Xtras", "Settings", $GEN_Ini);
+	$STG_LayFallbackDef = getkey("LayFallbackDef", "Settings", $GEN_Ini);
+	$STG_StdResetWithLay = getkey("StdResetWithLay", "Settings", $GEN_Ini);
+
+// Settings Text   ---------
+	global $STX_EnableLayouts, $STX_AutoOptimizeTree, $STX_AutoSave, $STX_Confirmation, $STX_SessionListOnTop, $STX_InfoPanelPreview, $STX_Xtras, $STX_LayFallbackDef, $STX_StdResetWithLay;
+	$STX_EnableLayouts = "Use &Layouts";
+	$STX_AutoOptimizeTree = "General: Auto-&Optimize Tree on Session Change";
+	$STX_AutoSave = "General: Auto-&Save Temporary Version of Session on Session Change";
+	$STX_Confirmation = "Interface: Enable &Confirmation Dialog for Reset and Update";
+	$STX_SessionListOnTop = "Interface: Display List of Sessions on Top (Instead of Bottom)";
+	$STX_InfoPanelPreview = "Layouts: Activate &Preview When Loading Layout Session with Info Panel Visible";
+	$STX_Xtras = "Layouts: Enable Saving of &Toolbar Content with Layout";
+	$STX_LayFallbackDef = "Layouts: Always Load &Default Layout (Instead of Last) When Returning to Standard Sessions";
+	$STX_StdResetWithLay = "Standard: Always Load &Default Layout on Session Change";
+
+// Layout variables
+	global $GEN_LayUsed, $GEN_LayON;
+	$GEN_LayUsed = (strlen(regexreplace(readfile("$GEN_Ini"), "[^\[]", "")) > 4 )? 1 : 0; // Check existence of user layouts (other than the 4 SM's default [Ini entries])
+	$GEN_LayON = ($STG_EnableLayouts && $GEN_LayUsed)? 1 : 0; // Layout loading is active
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+	global
+		$PRE_l_AvailSess,    // [$| ] List of available sessions (sep and end "|")
+		$PRE_l_AvailSessDet, // [$| ] Detailed list of available sessions (w/ layout) (sep and end "|")
+		$PRE_n_AvailSess,    // [#|0] Number of available sessions
+		$PRE_CurSess,        // [$| ] Current session name if valid
+		$PRE_CurSessInv,     // [$| ] Current session name if inverted
+		$PRE_CurSessLay,     // [$| ] Current session name if valid and has layout
+		$PRE_SessTab1,       // [$| ] Pane 1 tabset name if from session (valid or not)
+		$PRE_SessTab1Inv,    // [$| ] Pane 1 tabset name if from session inverted
+		$PRE_SessTab2,       // [$| ] Pane 2 tabset name if from session (valid or not)
+		$PRE_SessTab2Inv;    // [$| ] Pane 2 tabset name if from session inverted
+
+	global
+		$PRE_AutoSave,			 // [$| ]	Name of Autosaved session if exists
+		$PRE_CurAutoSave;		 // [$| ]	Current Autosaved session name if valid
+
+	/* - FYI - Defined dynamically (Do not declare here) -
+		$DYN_InpSess,        // [$]   Input session name to act upon
+		$DYN_InpSessLay,     // [$]   Input layout-session name to act upon
+		$DYN_b_InpSessLay,   // [1|0] Input session has layout
+	*/
+
+	global								 // Visual affixes
+		$GEN_LaySuffix, $GEN_AutoSaveSuffix, $GEN_TmpSession, $GEN_Icon_Lay;
+		$GEN_LaySuffix = "   {Layout Session}";						// For detailed list (used for Delete+)
+		$GEN_AutoSaveSuffix = "    — AutoSave —";
+		$GEN_TmpSession = "-   Temporary Session   -";
+		$GEN_Icon_Lay = ":panelshow";											// Icon of inactive layout sessions, and layout menu entries
+
+	// Use custom icon for active session (e.g. XYplorer\Data\Icons\SessionManager.ico)
+	$CustomIcon = "<xyicons>\".self("base").".ico";
+	$CustomIcon_Std = exists($CustomIcon)? $CustomIcon: ":favs";
+	$CustomIcon_Lay = exists($CustomIcon)? $CustomIcon: ":favs";
+
+	// Use custom icon for active session with layout (e.g. XYplorer\Data\Icons\SessionManager_Layout.ico)
+	$CustomIcon = "<xyicons>\".self("base")."_Layout.ico";
+	$CustomIcon_Lay = exists($CustomIcon)? $CustomIcon: $CustomIcon_Lay;
+
+	$d_Icon_ActiveSession_Std = "|$CustomIcon_Std|1";	// Icon of active non-layout session
+	$d_Icon_ActiveSession_Lay = "|$CustomIcon_Lay|1";	// Icon of active layout session
+
+
+// -----------------------
+//  Define Main variables
+// -----------------------
+
+	$oset1 = gettoken(<xypane1>, -1, "\");                  $oset2 = gettoken(<xypane2>, -1, "\");
+	$sset1 = regexreplace($oset1, "§(1|2)§_", "");          $sset2 = regexreplace($oset2, "§(1|2)§_", "");
+	$PRE_SessTab1 = ($sset1 != $oset1)? $sset1 : "";        $PRE_SessTab2 = ($sset2 != $oset2)? $sset2 : "";
+	$PRE_SessTab1Inv = ($oset1 Like "*§2§_*")? $sset1 : ""; $PRE_SessTab2Inv = ($oset2 Like "*§1§_*")? $sset2 : "";
+	$PRE_CurSessInv = ($PRE_SessTab1Inv && ($PRE_SessTab1Inv == $PRE_SessTab2Inv)) ? $PRE_SessTab1Inv : "";
+	$PRE_CurSess = (!$PRE_CurSessInv && ($PRE_SessTab1 == $PRE_SessTab2))? $PRE_SessTab1 : "";
+	$PRE_CurSessLay = (getkey("", "Layout ".replace($PRE_CurSess, $GEN_AutoSaveSuffix), $GEN_Ini))? replace($PRE_CurSess, $GEN_AutoSaveSuffix) : "";
+
+// Xtras
+	if $STG_Xtras {
+		global $PRE_Xtra_Toolbar, $PRE_Xtra_Catalog, $PRE_Xtra_Tags, $PRE_Xtra_FileAssoc;
+		if $PRE_CurSessLay {
+			$Section = "Layout ".$PRE_CurSessLay;
+			$PRE_Xtra_Toolbar = getkey("XTRA-Toolbar", $Section, $GEN_Ini);
+/* Xtras-WIP
+			$PRE_Xtra_Catalog = getkey("XTRA-Catalog", $Section, $GEN_Ini);
+			$PRE_Xtra_Tags = getkey("XTRA-Tags", $Section, $GEN_Ini);
+			$PRE_Xtra_FileAssoc = getkey("XTRA-FileAssoc", $Section, $GEN_Ini);
+*/
+		}
+	}
+
+// List of sessions
+	global $MEN_l_sessions;
+	set $d_xtra;
+	$l_AllTabsets = folderreport("dirsrel", r, <xydata>."\Panes", , , "|");
+	$l_AllTabsets_1 = replace(regexmatches($l_AllTabsets, "§1§_[^\|]+", "|"), "§1§_");
+	$l_AllTabsets_2 = replace(regexmatches($l_AllTabsets, "§2§_[^\|]+", "|"), "§2§_");
+
+	if ($l_AllTabsets_1 != $l_AllTabsets_2) { // If incomplete sessions
+		set $l_AllTabsets;
+		foreach ($tsession, $l_AllTabsets_1, "|") {
+			if (strpos($l_AllTabsets_2, "|".$tsession."|") != -1) {
+				$l_AllTabsets = $tsession."|".$l_AllTabsets;
+			}
+		}
+	} else {
+		$l_AllTabsets = "|".$l_AllTabsets_1."|";
+	}
+
+	status "Session Manager", , "progress";
+// --- Order list of sessions
+	$l_SessionsOrder = replace(formatlist(getkey("SessionsOrder", "General", $GEN_Ini), "v", "|"), "||", "|");
+	if $l_SessionsOrder {
+		foreach ($tsession, $l_SessionsOrder, "|") {
+			if ($tsession == "-") {
+				$l_AllTabsets = "-|".$l_AllTabsets;
+			} elseif ($l_AllTabsets Like "*|$tsession|*") {
+				$l_AllTabsets = $tsession."|".replace($l_AllTabsets, "|".$tsession."|", "|");
+			}
+		}
+	}
+
+	if $STG_AutoSave {
+		$AutoSaveChk = regexmatches($l_AllTabsets, "[^\|]+?(?=".$GEN_AutoSaveSuffix.")");
+		if $AutoSaveChk {
+			$PRE_AutoSave = $AutoSaveChk;
+		}
+	}
+
+// -----------------------
+	foreach ($tsession, $l_AllTabsets, "|") {
+		if $tsession {
+			if ($tsession == "-") {
+				set $separator;
+				$MEN_l_sessions = $MEN_l_sessions."-"<crlf 2>;
+			} else {
+// ------------------------------------------------------------------------->>>   Valid session
+				$d_Script = (getkey("Script", $tsession, $GEN_Ini))? "    ®" : "";
+				$d_SessAct = ($tsession == replace($PRE_CurSess, $GEN_AutoSaveSuffix))?  "$d_Script$d_Icon_ActiveSession_Std" : $d_Script; // Iconize active session
+				if ($GEN_LayON && getkey("", "Layout ".$tsession, $GEN_Ini)) {
+	//-Xtras---------------------------------------------------------------->
+					if $STG_Xtras {
+						$d_xtra = getkey("XTRA-Toolbar", "Layout ".$tsession, $GEN_Ini)? "    ¶": $d_xtra;
+		/* Xtras-WIP
+						$d_xtra = getkey("XTRA-Catalog", "Layout ".$tsession, $GEN_Ini)? "$d_xtra  [C]": $d_xtra;
+						$d_xtra = getkey("XTRA-Tags", "Layout ".$tsession, $GEN_Ini)? "$d_xtra  [T]": $d_xtra;
+						$d_xtra = getkey("XTRA-FileAssoc", "Layout ".$tsession, $GEN_Ini)? "$d_xtra  [F]": $d_xtra;
+		*/
+						$d_xtra = replace($d_xtra, "]  [", ",");
+					}
+	//-Xtras----------------------------------------------------------------<
+					$PRE_l_AvailSessDet = $PRE_l_AvailSessDet.$tsession.$GEN_LaySuffix.$d_xtra."|"; // Create detailed list of available sessions
+					$d_SessAct = ($tsession == replace($PRE_CurSess, $GEN_AutoSaveSuffix))? $d_Script$d_xtra$d_Icon_ActiveSession_Lay : $d_Script.$d_xtra."|$GEN_Icon_Lay"; // Iconize layout-sessions
+					$d_xtra = ""; // Reset Xtras
+				} else {
+					$PRE_l_AvailSessDet = $PRE_l_AvailSessDet.$tsession."|";
+				}
+
+				if ($tsession UnLike "*$GEN_AutoSaveSuffix") {
+					if ($STG_AutoSave && (($tsession == $PRE_AutoSave) || (!$PRE_AutoSave && ($tsession == $PRE_CurSess)))) {
+						if ($tsession == replace($PRE_CurSess, $GEN_AutoSaveSuffix)) {
+							$PRE_CurAutoSave = ($PRE_AutoSave)? $tsession : "";
+							$MEN_l_sessions = $MEN_l_sessions."$tsession$GEN_AutoSaveSuffix$d_SessAct"<crlf>."  global $DYN_InpSess; $DYN_InpSess = ""$tsession""; load(""$GEN_CurScript"", ""_Reset"");<crlf>";
+						} else {
+							$MEN_l_sessions = $MEN_l_sessions."$tsession$GEN_AutoSaveSuffix$d_SessAct"<crlf>."  global $DYN_InpSess; $DYN_InpSess = ""$tsession$GEN_AutoSaveSuffix""; load(""$GEN_CurScript"", ""_Load"");<crlf>";
+						}
+					} else {
+						$action = ($tsession != $PRE_CurSess)? "_Load" : "_Reset";
+						$MEN_l_sessions = $MEN_l_sessions."$tsession$d_SessAct"<crlf>."  global $DYN_InpSess; $DYN_InpSess = ""$tsession""; load(""$GEN_CurScript"", ""$action"");<crlf>";
+					}
+					$PRE_l_AvailSess = $PRE_l_AvailSess.$tsession."|"; // Create list of available sessions
+					$PRE_n_AvailSess++;
+				}
+// -------------------------------------------------------------------------<<<
+			}
+		}
+	}
+
+// ------------------------------------------------------------------------->>>   
+	if $MEN_l_sessions {
+		if ($STG_AutoSave && ($PRE_n_AvailSess < 2)) {
+			$MEN_l_sessions = replace($MEN_l_sessions, $GEN_AutoSaveSuffix);
+		}
+	
+		$MEN_l_sessions = regexreplace($MEN_l_sessions, '"-"\s*"-"'); // Remove separators when ordered sessions are missing (manually deleted)
+		if ($MEN_l_sessions UnLike '*"-"*') {
+			unset $separator;
+		}
+
+		if !$STG_SessionListOnTop {
+//			if isset($separator) {
+//				$MEN_l_sessions = "••••••••••••••••••••••••••••"<crlf 2>."-"<crlf 2>.$MEN_l_sessions;
+//			} else {
+				$MEN_l_sessions = "-"<crlf 2>.$MEN_l_sessions;
+//			}
+		}
+
+		$TmpSession = regexmatches($MEN_l_sessions, '"'.$GEN_TmpSession.'.*\n.*\r\n');
+		if $TmpSession {
+			if ($PRE_n_AvailSess > 1) {
+				$MEN_l_sessions = replace($MEN_l_sessions, $TmpSession, "")."-"<crlf 2>.$TmpSession;
+			}
+			$MEN_l_sessions = regexreplace($MEN_l_sessions, '("-"\r\n\r\n){2}', "$1"); // Remove separator if no real session exists
+		}
+	
+		$Menu_About = ($PRE_CurSess)? "&About Current Session|:info" : "&About Current Tabsets|:favs|1";
+		$MEN_l_sessions = $MEN_l_sessions."-"<crlf 2>."$Menu_About"<crlf>."  load(""$GEN_CurScript"", ""_About"");<crlf>";
+	
+		if $STG_SessionListOnTop {
+//			if isset($separator) {
+//				$MEN_l_sessions = $MEN_l_sessions.<crlf 2>."-"<crlf 2>"••••••••••••••••••••••••••••"<crlf 2>;
+//			} else {
+				$MEN_l_sessions = $MEN_l_sessions.<crlf 2>"-"<crlf 2>;
+//			}
+		}
+
+	} else {
+		$Menu_About = "&About Current Tabsets|:favs|1";
+		if !$STG_SessionListOnTop {
+			$MEN_l_sessions = "-"<crlf 2>."$Menu_About"<crlf>."  load(""$GEN_CurScript"", ""_About"");<crlf>";
+		} else {
+			$MEN_l_sessions = "$Menu_About"<crlf>."  load(""$GEN_CurScript"", ""_About"");<crlf>"."-"<crlf 2>;
+		}
+	}
+// -------------------------------------------------------------------------<<<
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+/* ######################################################################################### */
+/* #######################*/
+/* ###  Main Functions ###*/
+/* #######################*/
+
+
+"MainMenu"
+
+	global $GEN_CurScript, $GEN_LayON,
+				 $PRE_CurSess, $PRE_CurSessLay, $PRE_n_AvailSess, $GEN_TmpSession, $GEN_Icon_Lay;
+	global $PRE_AutoSave, $GEN_AutoSaveSuffix, $PRE_CurAutoSave;
+	global $STG_Confirmation, $STG_SessionListOnTop, $STG_EnableLayouts, $STG_StdResetWithLay, $STG_LayFallbackDef, $STG_AutoSave,
+				 $STX_EnableLayouts, $MEN_l_sessions;
+
+	$Menu = "";
+	$d_Conf = ($STG_Confirmation)? "..." : "";
+	$d_Del = ($PRE_n_AvailSess > 1)? "s" : "";
+
+	if $STG_SessionListOnTop {
+		$Menu = $Menu.$MEN_l_sessions;
+	}
+	if $PRE_CurSess { // if session active
+		if ($PRE_CurSess == $GEN_TmpSession) {
+			$Menu = $Menu."&Reset Temporary Session$d_Conf|:tabsets"<crlf>."  load(""$GEN_CurScript"", ""_Reset"");<crlf>";
+			$Menu = $Menu."&Update Temporary Session$d_Conf|:tabsets"<crlf>."  load(""$GEN_CurScript"", ""_Update"");<crlf>";
+		} elseif ($STG_AutoSave && (!$PRE_AutoSave || $PRE_CurAutoSave)) {
+			if ($GEN_LayON && $PRE_CurSessLay) {
+				$Menu = $Menu."&Reset to Original Session (and Layout)$d_Conf|:tabsets"<crlf>."  load(""$GEN_CurScript"", ""_Reset"");<crlf>";
+				$Menu = $Menu."&Update Original Session (and Layout)$d_Conf|:tabsets"<crlf>."  load(""$GEN_CurScript"", ""_Update"");<crlf>";
+			} else {
+				$Menu = $Menu."&Reset to Original Session$d_Conf|:tabsets"<crlf>."  load(""$GEN_CurScript"", ""_Reset"");<crlf>";
+				$Menu = $Menu."&Update Original Session$d_Conf|:tabsets"<crlf>."  load(""$GEN_CurScript"", ""_Update"");<crlf>";
+			}
+		} elseif ($GEN_LayON && $PRE_CurSessLay) { // if layouts enabled and active session has layout
+			$Menu = $Menu."&Reset Session (and Layout)$d_Conf|:tabsets"<crlf>."  load(""$GEN_CurScript"", ""_Reset"");<crlf>";
+			$Menu = $Menu."&Update Session (and Layout)$d_Conf|:tabsets"<crlf>."  load(""$GEN_CurScript"", ""_Update"");<crlf>";
+		} else {
+			if ($STG_StdResetWithLay || $STG_LayFallbackDef) { // if layouts enabled and active session doesn't have layout, but 'Reset with Default' ON
+				$Menu = $Menu."&Reset Session (with Default Layout)$d_Conf|:tabsets"<crlf>."  load(""$GEN_CurScript"", ""_Reset"");<crlf>";
+			} else {
+				$Menu = $Menu."&Reset Session$d_Conf|:tabsets"<crlf>."  load(""$GEN_CurScript"", ""_Reset"");<crlf>";
+			}
+			$Menu = $Menu."&Update Session$d_Conf|:tabsets"<crlf>."  load(""$GEN_CurScript"", ""_Update"");<crlf>";
+		}
+	} else {
+			$Menu = $Menu."&Reset Session$d_Conf"<crlf 2>;
+			$Menu = $Menu."&Update Session$d_Conf"<crlf 2>;
+	}
+	$Menu = $Menu."-"<crlf 2>;
+// ------------------------------------------------------<>
+	$Menu = $Menu."&Save Session as...|:savesett"<crlf>."  load(""$GEN_CurScript"", ""_Save"");<crlf>";
+	if ($PRE_CurSess != $GEN_TmpSession) {
+		$Menu = $Menu."&Save Temporary Session"<crlf>."  load(""$GEN_CurScript"", ""_Save-Temporary"");<crlf>";
+	}
+	if ($PRE_CurSess && ($PRE_CurSess != $GEN_TmpSession)) {
+		$Menu = $Menu."Re&name Session...|:rename"<crlf>."  load(""$GEN_CurScript"", ""_Rename"");<crlf>";
+	} else {
+		$Menu = $Menu."Re&name Session..."<crlf 2>;
+	}
+	if $PRE_n_AvailSess { // if session active
+		$Menu = $Menu."&Delete Session$d_Del...|:del"<crlf>."  load(""$GEN_CurScript"", ""_Delete"");<crlf>";
+	} else {
+		$Menu = $Menu."&Delete Session$d_Del..."<crlf 2>;
+	}
+	$Menu = $Menu."-"<crlf 2>;
+	if ($STG_AutoSave && ($PRE_n_AvailSess > 1)) {
+		$ResetAutoSave = "  delete 1, 0, ""<xydata>\Panes\§1§_$PRE_AutoSave$GEN_AutoSaveSuffix|<xydata>\Panes\§2§_$PRE_AutoSave$GEN_AutoSaveSuffix""; wait 300; status ""Autosave reset successfully"";<crlf>";
+		if (!$PRE_AutoSave || $PRE_CurAutoSave) {
+			$Menu = $Menu."Reset Autosave to Original Session|:autorefresh"<crlf>."  global $DYN_InpSess; $DYN_InpSess = ""$tsession""; load(""$GEN_CurScript"", ""_Reset"");".$ResetAutoSave;
+		} else {
+			$Menu = $Menu."Reset Autosave to Current Session|:autorefresh"<crlf>.$ResetAutoSave;
+		}
+	}
+// ------------------------------------------------------<>
+	$Menu = $Menu."&Layout Tools<tab>>|$GEN_Icon_Lay"<crlf>."  load(""$GEN_CurScript"", ""_LayoutSessions-Menu"");<crlf>";
+	$Menu = $Menu."&Options<tab>>|:conf"<crlf>."  load(""$GEN_CurScript"", ""_Options-Menu"");<crlf>";
+// ------------------------------------------------------<>
+	if !$STG_SessionListOnTop {
+		$Menu = $Menu.$MEN_l_sessions;
+	}
+
+//	global $Clock_1; // Timer Check
+//	status eval(now("ssfff") - $Clock_1), "FF0000";
+
+	load($Menu, , s);
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_Load"
+
+	global $GEN_CurScript, $GEN_Ini, $GEN_LayON,
+				 $STG_AutoOptimizeTree, $STG_AutoSave, $STG_InfoPanelPreview, $STG_LayFallbackDef, $STG_StdResetWithLay, $STG_Xtras;
+	global $PRE_CurSess, $PRE_CurSessLay, $PRE_CurSessInv, $PRE_SessTab1Inv, $PRE_SessTab2Inv,
+				 $PRE_AutoSave, $PRE_CurAutoSave, $GEN_AutoSaveSuffix;
+	global $DYN_InpSess, $DYN_InpSessLay, $DYN_b_InpSessLay, $DYN_NoInput;
+	global $PRE_Xtra_Toolbar, $PRE_Xtra_Catalog, $PRE_Xtra_Tags, $PRE_Xtra_FileAssoc;
+
+	if !$GEN_CurScript { // If accessed externally from Catalog, CKS, UDC, etc.
+		sub "_Initialize";
+	}
+
+	if $STG_AutoSave {
+		if ($PRE_CurAutoSave && (($DYN_InpSess == $PRE_CurSess) || ($DYN_InpSess$GEN_AutoSaveSuffix == $PRE_CurSess))) { // Reset Autosave session to original
+			$DYN_InpSess = $PRE_CurAutoSave;
+		} elseif ((replace($DYN_InpSess, $GEN_AutoSaveSuffix) != replace($PRE_CurSess, $GEN_AutoSaveSuffix)) && (!$PRE_AutoSave || $PRE_CurAutoSave)) {
+			if $PRE_CurAutoSave { // Update
+				$PRE_CurAutoSave = $PRE_CurSess;
+				$DYN_NoInput = 1;
+				tabset("save", , 1);
+				wait 10;
+				tabset("save", , 2);
+			} else { // Save
+				tabset("saveas", "§1§_$PRE_CurSess$GEN_AutoSaveSuffix", 1);
+				wait 10;
+				tabset("saveas", "§2§_$PRE_CurSess$GEN_AutoSaveSuffix", 2);
+			}
+		} elseif ($DYN_InpSess == $PRE_AutoSave) { // If accessed externally and session has AutoSave, load AutoSave instead
+			$DYN_InpSess = $PRE_AutoSave$GEN_AutoSaveSuffix;
+		}
+	}
+
+	if (!$PRE_CurAutoSave && ($DYN_InpSess == $PRE_CurSess)) {
+		sub "_Reset";
+		end 1==1, , 1;
+	}
+
+// Load Detection
+	if ($DYN_InpSess != "") {
+		end ($PRE_CurSessInv == $DYN_InpSess), "<crlf 2>You're already using session  '$DYN_InpSess' ,    <crlf>   but you've inverted its panes.    <crlf 2>Please load another session before reloading session  '$DYN_InpSess' .    <crlf 2>";
+
+// ------------------------------------------------------------------------->>>   Layout
+// Load (and save previous if needed)
+		$DYN_InpSessMaster = replace($DYN_InpSess, $GEN_AutoSaveSuffix);
+		$DYN_b_InpSessLay = (getkey("", "Layout ".$DYN_InpSessMaster, $GEN_Ini))? 1 : 0;
+		if (($GEN_LayON && ($PRE_CurSessLay || $DYN_b_InpSessLay || $STG_LayFallbackDef)) || (!$GEN_LayON && $STG_StdResetWithLay)) {
+			if (($STG_LayFallbackDef && !$DYN_b_InpSessLay) || !$GEN_LayON) { // If 'Reset to default' or 'Fallback to default' ON
+				$DYN_InpSessLay = "¦‡¦-Default-¦‡¦";
+			} else {
+				$DYN_InpSessLay = (!$STG_LayFallbackDef && $PRE_CurSessLay && !$DYN_b_InpSessLay)? "¦‡¦-Last-¦‡¦" : $DYN_InpSessMaster;
+	//-Xtras---------------------------------------------------------------->
+				if $STG_Xtras {
+					if $DYN_b_InpSessLay {
+						$DYN_Xtra_Toolbar = getkey("XTRA-Toolbar", "Layout ".$DYN_InpSessMaster, $GEN_Ini);
+		/* Xtras-WIP
+						$DYN_Xtra_Catalog = getkey("XTRA-Catalog", "Layout ".$DYN_InpSess, $GEN_Ini);
+						$DYN_Xtra_Tags = getkey("XTRA-Tags", "Layout ".$DYN_InpSess, $GEN_Ini);
+						$DYN_Xtra_FileAssoc = getkey("XTRA-FileAssoc", "Layout ".$DYN_InpSess, $GEN_Ini);
+		*/
+						if $DYN_Xtra_Toolbar {
+							if !$PRE_Xtra_Toolbar {setkey(toolbar(), "XTRA-Toolbar", "Layout ¦‡¦-Last-¦‡¦", $GEN_Ini);} // Save last Toolbar
+							toolbar($DYN_Xtra_Toolbar); // Load new Toolbar --- Visual BUG cause by button menu overlay
+						}
+					}
+				}
+			}
+			if !$DYN_b_InpSessLay {
+				if $PRE_Xtra_Toolbar {toolbar(getkey("XTRA-Toolbar", "Layout ¦‡¦-Last-¦‡¦", $GEN_Ini));} // Load last Toolbar
+			}
+	//-Xtras----------------------------------------------------------------<
+			load "$GEN_CurScript", "_Layout-Load";
+		}
+// -------------------------------------------------------------------------<<<
+
+// Load or Revert Action (Check if session tabset is already loaded, to revert instead of load)
+		$x = 1; $y = 2;
+		$osetx = gettoken(eval(<xypane.$x.>), -1, "\"); $ssetx = replace($osetx, "§".$x."§_", "");
+		$actionx = (($DYN_InpSess != $ssetx) || ($osetx == $ssetx))? "load" : "revert";
+		tabset($actionx, "§$x§_$DYN_InpSess", $x);
+		wait 10;
+		$osety = gettoken(eval(<xypane.$y.>), -1, "\"); $ssety = replace($osety, "§".$y."§_", "");
+		$actiony = (($DYN_InpSess != $ssety) || ($osety == $ssety))? "load" : "revert";
+		tabset($actiony, "§$y§_$DYN_InpSess", $y);
+		wait 10;
+		if $STG_AutoOptimizeTree {
+			#1040; // Optimize Tree
+			#1010; // Fully Collapse
+		}
+		#482;  // Refresh Tree (clean remaining unavailable drives)
+		if ($actionx == "revert") && ($actionx == $actiony) {
+			status "Session  '$DYN_InpSess'  reset successfully";
+		} else {
+			status "Session  '$DYN_InpSess'  loaded successfully";
+		}
+	}
+
+	if ($PRE_CurAutoSave && ($DYN_InpSess == $PRE_CurAutoSave)) {
+ 		delete 1, 0, "<xydata>\Panes\§1§_$PRE_CurAutoSave$GEN_AutoSaveSuffix|<xydata>\Panes\§2§_$PRE_CurAutoSave$GEN_AutoSaveSuffix";
+		wait 300;
+		status "Session  '$PRE_CurAutoSave'  reset successfully";
+	}
+
+// Autorun script
+	$Script = getkey("Script", replace("$DYN_InpSess", $GEN_AutoSaveSuffix), $GEN_Ini);
+	if $Script {
+		if ($Script Like "::*") { // Run script
+			load $Script, , "s";
+		} else { // Load script
+			$Label = trim(gettoken($Script, 2, ","), ' "');
+			$Script = trim(gettoken($Script, 1, ","), ' "');
+			load $Script, $Label;
+		}
+	}
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_Reset"
+
+	global $GEN_CurScript, $GEN_Ini, $GEN_LayON,
+				 $PRE_CurSessLay, $PRE_CurSess;
+	global $STG_AutoOptimizeTree, $STG_AutoSave, $STG_Confirmation, $STG_InfoPanelPreview, $STG_LayFallbackDef, $STG_StdResetWithLay, $STG_Xtras;
+
+	global $DYN_InpSess, $DYN_InpSessLay, $PRE_CurAutoSave, $GEN_AutoSaveSuffix;
+
+	if !$GEN_CurScript { // If accessed externally from Catalog, CKS, UDC, etc.
+		sub "_Initialize";
+	}
+	$d_WithLay = ($GEN_LayON && ($PRE_CurSessLay || $DYN_InpSessLay))? " (with layout)" : "";
+
+	if $STG_Confirmation {end !confirm("<crlf 2>You're currently using session$d_WithLay:    <crlf 2>      $PRE_CurSess    <crlf 2>Are you sure you want to reset it?    <crlf 2>");}
+
+// ------------------------------------------------------------------------->>>   Autosave
+	if ($STG_AutoSave && $PRE_CurAutoSave) {
+		$DYN_InpSess = $PRE_CurAutoSave;
+		sub "_Load";
+ 		delete 1, 0, "<xydata>\Panes\§1§_$PRE_CurAutoSave$GEN_AutoSaveSuffix|<xydata>\Panes\§2§_$PRE_CurAutoSave$GEN_AutoSaveSuffix";
+		wait 300;
+		status "Session$d_WithLay  '$PRE_CurAutoSave'  reset successfully";
+		end 1==1, , 1;
+	}
+// -------------------------------------------------------------------------<<<
+
+// ------------------------------------------------------------------------->>>   Layout - Load
+	$PRE_CurSessMaster = replace($PRE_CurSess, $GEN_AutoSaveSuffix);
+	if ($GEN_LayON && ($PRE_CurSessLay || $STG_LayFallbackDef)) || (!$GEN_LayON && $STG_StdResetWithLay) {
+		$DYN_InpSessLay = ($GEN_LayON && $PRE_CurSessLay)? $PRE_CurSessMaster : "¦‡¦-Default-¦‡¦";
+		load "$GEN_CurScript", "_Layout-Load";
+	//-Xtras---------------------------------------------------------------->
+			if $STG_Xtras {
+				if $PRE_CurSessLay {
+					$DYN_Xtra_Toolbar = getkey("XTRA-Toolbar", "Layout ".$PRE_CurSessMaster, $GEN_Ini);
+		/* Xtras-WIP
+					$DYN_Xtra_Catalog = getkey("XTRA-Catalog", "Layout ".$PRE_CurSess, $GEN_Ini);
+					$DYN_Xtra_Tags = getkey("XTRA-Tags", "Layout ".$PRE_CurSess, $GEN_Ini);
+					$DYN_Xtra_FileAssoc = getkey("XTRA-FileAssoc", "Layout ".$PRE_CurSess, $GEN_Ini);
+		*/
+					if $DYN_Xtra_Toolbar {toolbar($DYN_Xtra_Toolbar);}
+				}
+			}
+	//-Xtras----------------------------------------------------------------<
+	}
+// -------------------------------------------------------------------------<<<
+
+
+	tabset("revert", , 1);
+	wait 10;
+	tabset("revert", , 2);
+	wait 10;
+	if $STG_AutoOptimizeTree {
+		#1040; // Optimize Tree
+		#1010; // Fully Collapse
+	}
+	#482;  // Refresh Tree (clean remaining unavailable drives)
+	status "Session$d_WithLay  '$PRE_CurSess'  reset successfully";
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_Update"
+
+	global $GEN_CurScript, $GEN_Ini, $GEN_LayON,
+				 $PRE_CurSess, $PRE_CurSessLay, $PRE_SessTab1, $PRE_SessTab2, $PRE_CurAutoSave, $GEN_AutoSaveSuffix;
+	global $STG_Confirmation, $STG_AutoSave, $STG_Xtras, $DYN_InpSess, $DYN_NoInput, $DYN_InpSessLay;
+	global $PRE_Xtra_Toolbar, $PRE_Xtra_Catalog, $PRE_Xtra_Tags, $PRE_Xtra_FileAssoc;
+	$d_WithLay = ($GEN_LayON && ($PRE_CurSessLay || $DYN_InpSessLay))? " (with layout)" : "";
+
+	if $PRE_CurSess { // If valid session (two current tabsets from a single session, and in their appropriate pane - i.e. §1§ in Pane1)
+
+	if ($STG_AutoSave && $PRE_CurAutoSave) {
+ 		delete 1, 0, "<xydata>\Panes\§1§_$PRE_CurAutoSave|<xydata>\Panes\§2§_$PRE_CurAutoSave";
+		tabset("saveas", "§1§_$PRE_CurAutoSave", 1);
+		wait 10;
+		tabset("saveas", "§2§_$PRE_CurAutoSave", 2);
+ 		delete 1, 0, "<xydata>\Panes\§1§_$PRE_CurAutoSave$GEN_AutoSaveSuffix|<xydata>\Panes\§2§_$PRE_CurAutoSave$GEN_AutoSaveSuffix";
+		$PRE_CurSess = $PRE_CurAutoSave;
+	} else {
+		if (!$DYN_NoInput && $STG_Confirmation) {end !confirm("<crlf 2>You're currently using session$d_WithLay:    <crlf 2>      $PRE_CurSess    <crlf 2>Are you sure you want to update it?    <crlf 2>");}
+		tabset("save", , 1);
+		wait 10;
+		tabset("save", , 2);
+		wait 10;
+	}
+
+// ------------------------------------------------------------------------->>>   Layout - Save
+		if (($GEN_LayON && $PRE_CurSessLay) || $DYN_InpSessLay) { // If session has layout, or coming from 'Save' with layout
+			$DYN_InpSessLay = replace($PRE_CurSess, $GEN_AutoSaveSuffix);
+	//-Xtras---------------------------------------------------------------->
+			if $STG_Xtras {
+				if $PRE_Xtra_Toolbar {setkey(toolbar(), "XTRA-Toolbar", "Layout $PRE_CurSessLay", $GEN_Ini);}
+			}
+	//-Xtras----------------------------------------------------------------<
+			load "$GEN_CurScript", "_Layout-Save";
+		}
+// -------------------------------------------------------------------------<<<
+
+		wait 400;
+		status "Session$d_WithLay  '$PRE_CurSess'  updated successfully";
+	} else {
+		status "No session to update", "883333", "stop";
+		$d_Valid = ($PRE_SessTab1 || $PRE_SessTab2)? " valid" : "";
+		msg "<crlf 2>You're not using a$d_Valid session.    <crlf>It wouldn't be wise to update the tabsets.    <crlf 2>--->  Another window will open with the information about your current tabsets.    <crlf 2>";
+		sub "_About";
+	}
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_Delete"
+
+	global $GEN_CurScript, $GEN_LaySuffix, $GEN_Ini,
+				 $PRE_l_AvailSessDet, $PRE_n_AvailSess, $PRE_SessTab1, $PRE_SessTab2,
+				 $PRE_CurAutoSave, $PRE_AutoSave, $GEN_AutoSaveSuffix;
+	global $DYN_InpSessLay;
+
+// List available sessions not in use
+	set $l_AvailSessDet; set $n_SessAvailDel;
+	foreach($DelSess, $PRE_l_AvailSessDet, "|") {
+		if ($DelSess && ($DelSess != $PRE_SessTab1) && ($DelSess != $PRE_SessTab1$GEN_LaySuffix) && ($DelSess != $PRE_SessTab2) && ($DelSess != $PRE_SessTab2$GEN_LaySuffix) && ($DelSess != $PRE_CurAutoSave) && ($DelSess UnLike "*$GEN_AutoSaveSuffix")) {
+			$n_SessAvailDel++;
+			$l_AvailSessDet = $l_AvailSessDet.$DelSess."|";
+		}
+	}
+
+// Delete Validation
+	if (!$n_SessAvailDel) { // End if only sessions are in use
+		if ($PRE_n_AvailSess == 1) {
+			if ($PRE_SessTab1 == $PRE_SessTab2) { // active session (valid or not)
+				$d_NoDel = "<crlf>You're currently using the only session:    <crlf 2>      $PRE_SessTab1    <crlf 2>It can't be deleted right now.    <crlf 2>--->  Load regular tabsets or save a new session first."
+			} else {
+				$d_NoDel = "<crlf>You're currently using a tabset of the only session:    <crlf 2>      $PRE_SessTab1$PRE_SessTab2    <crlf 2>It can't be deleted right now.    <crlf 2>--->  Load regular tabsets or save a new session first."
+			}
+		} elseif ($PRE_n_AvailSess == 2) { // 'if' shouldn't be needed. TBD
+			$d_NoDel = "<crlf>You're currently using tabsets of the only sessions:    <crlf 2>      $PRE_SessTab1    <crlf>      $PRE_SessTab2    <crlf 2>None of them can be deleted right now.    <crlf 2>--->  Load regular tabsets or a single session first."
+		}
+		status "No session deleted", "883333", "stop";
+		msg "<crlf>$d_NoDel    <crlf 2>";
+		end 1==1;
+	}
+
+// Delete Dialog
+	$d_SessAvail = ($n_SessAvailDel > 1)? "s" : "";
+	if ($PRE_SessTab1 == $PRE_SessTab2) { // active session (valid or not)
+		$d = " session:<crlf>   ".replace($PRE_SessTab1, $GEN_AutoSaveSuffix)."  "; $d2 = "the other following";
+	} elseif ($PRE_SessTab1 && $PRE_SessTab2) {
+		$d = ":<crlf> - one tabset from session  '$PRE_SessTab1' ,<crlf> - one tabset from session  '$PRE_SessTab2' ."; $d2 = "the other following";
+	} elseif (($PRE_SessTab1 && !$PRE_SessTab2) || (!$PRE_SessTab1 && $PRE_SessTab2)) {
+		$d = ":<crlf> - one tabset from session  '$PRE_SessTab1$PRE_SessTab2' ."; $d2 = "the other following";
+	} else {
+		$d = " tabsets."; $d2 = "all";
+	}
+	$l_AvailSessDet = inputselect("You're currently using$d<crlf 2>You can delete $d2 session$d_SessAvail:", $l_AvailSessDet, , 2, "No session deleted", 350, , "Delete Sessions");
+
+// Delete Action
+// ------------------------------------------------------------------------->>>
+	if $l_AvailSessDet && ($l_AvailSessDet != "No session deleted") {
+		foreach ($InpSess, $l_AvailSessDet, "|") {
+			$i++;
+			$InpSessLay = $InpSess;
+			$InpSess = replace($InpSess, $GEN_LaySuffix, "");
+			$InpSessLay = ($InpSess != $InpSessLay)? $InpSess : "";
+			delete 1, 0, "<xydata>\Panes\§1§_$InpSess|<xydata>\Panes\§2§_$InpSess";
+
+			if ($InpSess == $PRE_AutoSave) { // If session had autosave session
+				delete 1, 0, "<xydata>\Panes\§1§_$InpSess$GEN_AutoSaveSuffix|<xydata>\Panes\§2§_$InpSess$GEN_AutoSaveSuffix";
+			}
+			if getkey("Script", $InpSess, $GEN_Ini)) { // If session has associated script
+				setkey("", "", $InpSess, $GEN_Ini);
+			}
+// ------------------------------------------------------------------------->>>   Layout - Delete
+			if $InpSessLay {
+				$DYN_InpSessLay = $InpSess;
+				load "$GEN_CurScript", "_Layout-Delete";
+			}
+// -------------------------------------------------------------------------<<<
+		}
+// ----------------------------------------------------------------->   Clean session order list
+		$l_AllTabsets = folderreport("dirsrel", "r", <xydata>."\Panes", , , "|")."|";
+		$l_SessionsOrder = getkey("SessionsOrder", "General", $GEN_Ini);
+		if $l_SessionsOrder {
+			foreach ($tsession, $l_SessionsOrder, "|") {
+				if (($tsession != "-") && (($l_AllTabsets UnLikeI "*§1§_$tsession|*") || ($l_AllTabsets UnLikeI "*§2§_$tsession|*"))) {
+					$l_SessionsOrder = replace($l_SessionsOrder."|", $tsession."|");
+				}
+			}
+			$l_SessionsOrder = trim(replacelist($l_SessionsOrder, "-|-,$GEN_TmpSession|", "-,", ","), "|-");
+			setkey("$l_SessionsOrder", "SessionsOrder", "General", $GEN_Ini);
+		}
+// -----------------------------------------------------------------<
+		wait 300;
+		$d = ($i == 1)? "  '$InpSess' " : "s";
+		$i = ($i == 1)? "S" : "$i  s";
+		status "$i"."ession$d deleted successfully";
+	} else {
+		wait 50;
+		status "No session deleted", "883333", "stop";
+	}
+// -------------------------------------------------------------------------<<<
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_Save"
+
+	global $GEN_CurScript, $GEN_LayON,
+				 $PRE_l_AvailSess, $PRE_CurSess, $PRE_CurSessLay, $PRE_CurSessInv, $PRE_SessTab1, $PRE_SessTab2,
+				 $STG_EnableLayouts;
+	global $DYN_NoInput, $DYN_InpSessLay;
+
+	$d_Save1 = ($PRE_CurSess)? "<crlf>You're currently using session:  $PRE_CurSess  " : "";
+	$d_Save2 = ($STG_EnableLayouts)? "• To save a session with its layout, add a question mark '?' before its name.<crlf>
+		- Ex1:       My Session     -->     Save  'My Session'  without layout.<crlf>
+		- Ex2:     ?My Session     -->     Save  'My Session'  with layout.<crlf 2>
+		Note: Layouts can also be saved later in menu Layout Tools  >  Save/Update Layout of Current Session  <crlf>" : "";
+
+	$InpSess = input("Save & Use session$d_Save1", "<crlf>
+		Enter the name of the tabsets session to save.    <crlf>
+		This session will be in use after you press OK.    <crlf 2>
+		• The name has to be a valid filename, and can not contain '[' or ']'.    <crlf 2>
+		$d_Save2
+		", , , "§CANCEL§");
+
+	end (($InpSess Like "*[*") || ($InpSess Like "*]*")), "<crlf 2>  You can't use  '['  or  ']'  in your session name.    <crlf 2>--->  Save under a different name.    <crlf 2>";
+	$InpSess = trim($InpSess);
+
+//-Layout- Detection
+	if (substr($InpSess, 0, 1) == "?") {
+		$InpSess = substr($InpSess, 1);
+		$DYN_InpSessLay = $InpSess;
+	}
+	$d_CurWithLay = ($GEN_LayON && $PRE_CurSessLay)? " (with layout)" : "";
+	$d_InpWithLay = ($GEN_LayON && $DYN_InpSessLay)? " (with layout)" : "";
+
+// Save Validation
+	if ($InpSess && ($InpSess != "§CANCEL§")) {
+		if ($InpSess LikeI $PRE_SessTab1) || ($InpSess LikeI $PRE_SessTab2) { // If at least one loaded tabset belongs to the session to save
+			if $PRE_CurSess { // If valid session
+				$Update = confirm("<crlf 2>You're currently using session$d_CurWithLay:    <crlf 2>      $PRE_CurSess    <crlf 2>Are you sure you want to update it?    <crlf 2>");
+				if $Update {
+					$DYN_NoInput = 1;
+					sub "_Update";
+				} else {
+					status "No session saved", "883333", "stop";
+				}
+			} elseif $PRE_CurSessInv {
+				status , , "stop";
+				msg "<crlf 2>You're currently using an inverted session:    <crlf 2>      $PRE_CurSessInv   <crlf 2>It wouldn't be safe to overwrite this session.   <crlf 2>--->  Try saving under a different name.   <crlf 2>";
+			} else {
+				status , , "stop";
+				msg "<crlf 2>You're currently using one tabset of session:   <crlf 2>      ".recase($InpSess, t)."   <crlf 2>It wouldn't be safe to overwrite the whole session.   <crlf 2>--->  Try saving under a different name.   <crlf 2>";
+			}
+		} else {
+
+// Save Action
+			if ($PRE_l_AvailSess == replace($PRE_l_AvailSess, "|".$InpSess."|", "")) { // If session doesn't exist (i.e. no tabset exists with same name as sesion)
+
+// ------------------------------------------------------------------------->>>   Layout - Save
+				if $DYN_InpSessLay {
+					load "$GEN_CurScript", "_Layout-Save";
+				}
+// -------------------------------------------------------------------------<<<
+
+				tabset("saveas", "§1§_$InpSess", 1);
+				wait 10;
+				tabset("saveas", "§2§_$InpSess", 2);
+				wait 400; // DEBUG: status disappear with MiniTree,OptimizeTree+?
+				status "Session$d_InpWithLay  '$InpSess'  saved successfully";
+			} else {
+				msg "<crlf 2>Session  '".recase($InpSess, t)."'   <crlf>   already exists.   <crlf 2>Choose another name.   <crlf 2>";
+				wait 400;
+				status "No session saved", "883333", "stop";
+			}
+		}
+	} else {
+		wait 400;
+		status "No session saved", "883333", "stop";
+	}
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_Save-Temporary"
+	global $GEN_CurScript, $PRE_CurSess, $PRE_CurSessInv, $PRE_SessTab1Inv, $GEN_TmpSession;
+
+	if !$GEN_CurScript { // If accessed externally from Catalog, CKS, UDC, etc.
+		sub "_Initialize";
+	}
+
+	if ($GEN_TmpSession == $PRE_CurSess) { // If TMP is current session
+		tabset("save", , 1);
+		wait 10;
+		tabset("save", , 2);
+	} elseif ($PRE_CurSessInv == $GEN_TmpSession) {
+		msg "<crlf 2>You're using an inverted Temporary Session.  <crlf 2>   It can't be overwritten.  <crlf 2>";
+		end 1==1;
+	} else {
+		delete 1, 0, "<xydata>\Panes\§1§_$GEN_TmpSession|<xydata>\Panes\§2§_$GEN_TmpSession";
+		wait 300;
+		if !$PRE_SessTab1Inv {
+			tabset("saveas", "§1§_$GEN_TmpSession", 1);
+			wait 10;
+			tabset("saveas", "§2§_$GEN_TmpSession", 2);
+		} else {
+			tabset("saveas", "§2§_$GEN_TmpSession", 2);
+			wait 10;
+			tabset("saveas", "§1§_$GEN_TmpSession", 1);
+		}
+	}
+	wait 400; // DEBUG: status disappear with MiniTree, OptimizeTree+?
+	status "Temporary Session saved successfully";
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_Rename"
+
+	global $GEN_CurScript, $GEN_Ini,
+				 $PRE_l_AvailSess, $PRE_CurSess, $PRE_CurSessLay, $PRE_SessTab1, $PRE_SessTab2,
+				 $PRE_AutoSave, $GEN_AutoSaveSuffix, $PRE_CurAutoSave;
+	global $DYN_InpSessLay;
+
+	if $PRE_CurSess { // If a valid session is active
+		$PRE_CurSess = ($PRE_CurAutoSave)? $PRE_AutoSave : $PRE_CurSess;
+		$InpSess = input("Rename session: '$PRE_CurSess'", "<crlf>Enter a new session name.   <crlf>The name has to be a valid filename, and can not contain '[' or ']'.   <crlf>", $PRE_CurSess, , "§CANCEL§");
+
+// Rename Action
+		if ($InpSess && ($InpSess != "§CANCEL§")) {
+			end (($InpSess Like "*[*") || ($InpSess Like "*]*")), "<crlf 2>  You can't use  '['  or  ']'  in your session name.    <crlf 2>--->  Rename with a different name.    <crlf 2>";
+			if (($InpSess UnLikeI $PRE_CurSess) && ($InpSess$GEN_AutoSaveSuffix UnLikeI $PRE_CurSess)) { // If new session name is different than current session name
+				if ($PRE_l_AvailSess == replace($PRE_l_AvailSess, "|".$InpSess."|", "")) { // If session doesn't exist (i.e. no tabset exists with same name as sesion)
+					$x = 1; $y = 1; if (get("pane") == 1) {$x = 2;} else {$y = 2;}
+					$d_AutoSave = ($PRE_CurAutoSave)? $GEN_AutoSaveSuffix : "";
+					tabset("rename", "§$x§_$InpSess$d_AutoSave", $x);
+					wait 10;
+					tabset("rename", "§$y§_$InpSess$d_AutoSave", $y);
+					if $PRE_CurAutoSave {
+						renameitem("§1§_".$InpSess, "<xydata>\Panes\§1§_$PRE_CurSess");
+						renameitem("§2§_".$InpSess, "<xydata>\Panes\§2§_$PRE_CurSess");
+					}
+
+// ------------------------------------------------------------------------->>>   Layout - Rename
+					if $PRE_CurSessLay {
+						$DYN_InpSessLay = replace($InpSess, $GEN_AutoSaveSuffix);
+						load "$GEN_CurScript", "_Layout-Rename";
+					}
+// -------------------------------------------------------------------------<<<
+
+					$SessionsOrder = replace(getkey("SessionsOrder", "General", $GEN_Ini), "$PRE_CurSess", "$InpSess");
+					setkey("$SessionsOrder", "SessionsOrder", "General", $GEN_Ini);
+
+					$Script = getkey("Script", $PRE_CurSess, $GEN_Ini);
+					if $Script {
+						setkey "", "", $PRE_CurSess,	$GEN_Ini;
+						setkey $Script, "Script", $InpSess,	$GEN_Ini;
+					}
+
+					wait 500;
+					status "Session  '$PRE_CurSess'  successfully renamed to  '$InpSess'";
+
+// Rename Validation
+				} else {
+					msg "<crlf 2>Session  '".recase($InpSess, t)."'  already exists.   <crlf 2>--->  Choose another name.   <crlf 2>";
+					status "No session renamed", "883333", "stop";
+				}
+			} else {
+				msg "<crlf 2>The current session is already named  '$PRE_CurSess' .   <crlf 2>";
+				status "No session renamed", "883333", "stop";
+			}
+		} else {
+			wait 50;
+			status "No session renamed", "883333", "stop";
+		}
+	} else {
+		$d = ($PRE_SessTab1 || $PRE_SessTab2)? " valid" : "";
+		msg "<crlf 2>You're not using a$d session.   <crlf 2>--->  Reload a session before trying to rename.   <crlf 2>";
+		status "No session renamed", "883333", "stop";
+	}
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_ReorderSessionList"
+
+	global $GEN_Ini, $GEN_TmpSession;
+	global $PRE_l_AvailSess;
+	global $DYN_SessionsOrder;
+
+	$l_AllTabsets = folderreport("dirsrel", "r", <xydata>."\Panes", , , "|")."|";
+	$l_SessionsOrder = getkey("SessionsOrder", "General", $GEN_Ini);
+	$l_AvailSess = $PRE_l_AvailSess;
+
+	while ($i < 2) { // 1st: Clean original (INI) list; 2nd: Clean user-modified list
+		$i++;
+	
+		if $l_SessionsOrder {
+			foreach ($tsession, $l_SessionsOrder, "|") {
+				if ($tsession != "-") {
+					if (($l_AllTabsets UnLikeI "*§1§_$tsession|*") || ($l_AllTabsets UnLikeI "*§2§_$tsession|*")) {
+						$l_SessionsOrder = replace("|$l_SessionsOrder|", "|$tsession|", "|");
+					}
+					if (gettoken("|$l_SessionsOrder|", "count", "|$tsession|") > 2) { // Remove (improbable) duplicates
+						$l_SessionsOrder = gettoken("|$l_SessionsOrder|", 1, "|$tsession|")."|$tsession".replace("|".gettoken("|$l_SessionsOrder|", 2, "|$tsession|", , 2), "$tsession|");
+					}
+					$l_AvailSess = formatlist(replace("|$l_AvailSess|", "|$tsession|", "|"), "dents", "|");
+				}
+			}
+			$l_SessionsOrder = trim($l_SessionsOrder, "|")."|".replace($l_AvailSess, $GEN_TmpSession);
+		} elseif ($i == 1) {
+			$l_SessionsOrder = replace($PRE_l_AvailSess, "$GEN_TmpSession");
+		}
+		$l_SessionsOrder = regexreplace(trim(regexreplace($l_SessionsOrder, "(-\|)+", "-|"), "|"), "(^-\|)|(\|-$)");
+		$l_AvailSess = replace(formatlist($l_SessionsOrder, "dents", "|"), "-|");
+
+		if ($i == 1) {
+			$Input = input("Write one or more session(s) name(s).   One per line.   '-' as separator.   Empty to reset.", "List: $l_AvailSess", replace("$l_SessionsOrder", "|", "<crlf>"), "m");
+			$l_SessionsOrder = trim(formatlist(replace($Input, "<crlf>", "|"), "e", "|"), "|");
+		}
+	}
+
+	$DYN_SessionsOrder = $l_SessionsOrder;
+
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+/* ######################################################################################### */
+/* ######################*/
+/* ###  Layout Menus  ###*/
+/* ######################*/
+
+
+"_LayoutSessions-Menu"
+
+
+	global $GEN_CurScript, $GEN_Ini, $GEN_LayON, $GEN_SM_Version, $GEN_LayUsed,
+				 $PRE_CurSess, $PRE_CurSessLay, $PRE_n_AvailSess, $GEN_Icon_Lay;
+	global $GEN_AutoSaveSuffix, $PRE_AutoSave, $PRE_CurAutoSave;
+	global $STG_EnableLayouts, $STG_Xtras, $STX_EnableLayouts, $STG_AutoSave;
+	global $PRE_Xtra_Toolbar, $PRE_Xtra_Catalog, $PRE_Xtra_Tags, $PRE_Xtra_FileAssoc;
+
+	$Menu = "";
+
+	if $STG_EnableLayouts {
+		$Menu = $Menu."$STX_EnableLayouts: ON||2"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 1; $OPT_Setting = ""EnableLayouts"";<crlf>  load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+		$Menu = $Menu."-"<crlf 2>;
+// ----------------------------------------------------------------->
+		if !$STG_Xtras {
+			$Menu = $Menu."&Reset Layout to Default|:autorefresh"<crlf>."  load(""$GEN_CurScript"", ""_Layout-Reset"");<crlf>";
+/*
+			$Menu = $Menu."&Reset Layout to Default|$GEN_Icon_Lay"<crlf>."  global $DYN_InpSessLay, $DYN_b_InpSessLay;<crlf>  $DYN_InpSessLay = ""¦‡¦-Default-¦‡¦"";";
+			$Menu = $Menu."<crlf>  $DYN_b_InpSessLay = 0; <crlf>  load(""$GEN_CurScript"", ""_Layout-Load""); wait 400; status ""Layout reset to default"";<crlf>";
+*/
+			$Menu = $Menu."&Update Default Layout|$GEN_Icon_Lay"<crlf>."  global $DYN_InpSessLay; $DYN_InpSessLay = ""¦‡¦-Default-¦‡¦""; load(""$GEN_CurScript"", ""_Layout-Save""); wait 400; status ""Default layout saved successfully"";<crlf>";
+			$Menu = $Menu."-"<crlf 2>;
+			if ($STG_AutoSave && (!$PRE_AutoSave || $PRE_CurAutoSave)) {
+				$Menu = $Menu."Autosave Note: Changes will Affect Original Session"<crlf 2>;
+			}
+			if $PRE_CurSessLay {
+				$Menu = $Menu."&Delete Complete Layout of Current Session|:del"<crlf>."  load(""$GEN_CurScript"", ""_Layout-Reset""); global $DYN_InpSessLay; $DYN_InpSessLay = ""$PRE_CurSessLay""; load(""$GEN_CurScript"", ""_Layout-Delete""); wait 400; status ""Layout of session  '$PRE_CurSessLay'  deleted successfully"";<crlf>";
+				$Menu = $Menu."Update Layout of &Current Session|$GEN_Icon_Lay"<crlf>."  global $DYN_InpSessLay; $DYN_InpSessLay = ""$PRE_CurSessLay""; if $PRE_Xtra_Toolbar {setkey(toolbar(), ""XTRA-Toolbar"", ""Layout $PRE_CurSessLay"", ""$GEN_Ini"");}; load(""$GEN_CurScript"", ""_Layout-Save""); wait 400; status ""Layout of session  '$PRE_CurSessLay'  updated successfully"";<crlf>";
+			} elseif $PRE_CurSess {
+				$Menu = $Menu."Save Layout of &Current Session|$GEN_Icon_Lay"<crlf>."  end ((""$PRE_CurSess"" Like ""*[*"") || (""$PRE_CurSess"" Like ""*]*"")), ""Layout sessions can't have '[' or ']' in their name. Save session under a different name.  "";";
+				$Menu = $Menu."<crlf>    global $DYN_InpSessLay; $PRE_CurSessMaster = replace(""$PRE_CurSess"", ""$GEN_AutoSaveSuffix""); $DYN_InpSessLay = ""$PRE_CurSessMaster""; load(""$GEN_CurScript"", ""_Layout-Save""); wait 400; status ""Layout of session  '$PRE_CurSessMaster'  saved successfully"";<crlf>";
+			} else {
+				$Menu = $Menu."Note: Load a Valid Session To Access More Options"<crlf 2>;
+			}
+// -----------------------------------------------------------------<
+
+// ----------------------------------------------------------------->
+		} else {
+			$Menu = $Menu."------------            DEFAULT LAYOUT            ------------"<crlf 2>;
+			$Menu = $Menu."-"<crlf 2>;
+			$Menu = $Menu."&Reset Layout to Default|:autorefresh"<crlf>."  global $DYN_InpSessLay, $DYN_b_InpSessLay;<crlf>  $DYN_InpSessLay = ""¦‡¦-Default-¦‡¦"";";
+			$Menu = $Menu."<crlf>  $DYN_b_InpSessLay = 0; <crlf>  load(""$GEN_CurScript"", ""_Layout-Load""); wait 400; status ""Layout reset to default"";<crlf>";
+			$Menu = $Menu."&Update Default Layout|$GEN_Icon_Lay"<crlf>."  global $DYN_InpSessLay; $DYN_InpSessLay = ""¦‡¦-Default-¦‡¦""; load(""$GEN_CurScript"", ""_Layout-Save""); wait 400; status ""Default layout saved successfully"";<crlf>";
+		// -----------------------
+			$Menu = $Menu."-"<crlf 2>;
+			$Menu = $Menu."Reload Default Toolbar|:autorefresh"<crlf>."  toolbar(getkey(""XTRA-Toolbar"", ""Layout ¦‡¦-Default-¦‡¦"", ""$GEN_Ini"")); wait 400; status ""Toolbar reset to default"";<crlf>";
+			$Menu = $Menu."Save Default Toolbar|:ctb59"<crlf>."    setkey(toolbar(), ""XTRA-Toolbar"", ""Layout ¦‡¦-Default-¦‡¦"", ""$GEN_Ini""); wait 400; status ""Default toolbar saved successfully"";<crlf>";
+/* Xtras-WIP
+		$Menu = $Menu."--"<crlf 2>;
+		$Menu = $Menu."Reload Default Catalog|%winsysdir%\shell32.dll /5"<crlf>."  <crlf>";
+		$Menu = $Menu."Reload Default Tags Database|%winsysdir%\shell32.dll /5"<crlf>."  <crlf>";
+*/
+		// -----------------------
+			if $PRE_CurSess {
+				if $STG_EnableLayouts {
+					$Menu = $Menu."-"<crlf 2>;
+					$Menu = $Menu."------------            CURRENT SESSION            ------------"<crlf 2>;
+					if ($STG_AutoSave && (!$PRE_AutoSave || $PRE_CurAutoSave)) {
+						$Menu = $Menu."Autosave Note: Changes will Affect Original Session"<crlf 2>;
+					}
+					$Menu = $Menu."-"<crlf 2>;
+					if !$PRE_CurSessLay {
+						$Menu = $Menu."Save Layout of Current Session|$GEN_Icon_Lay"<crlf>."  end ((""$PRE_CurSess"" Like ""*[*"") || (""$PRE_CurSess"" Like ""*]*"")), ""Layout sessions can't have '[' or ']' in their name. Save session under a different name.  "";";
+						$Menu = $Menu."<crlf>    global $DYN_InpSessLay; $PRE_CurSessMaster = replace(""$PRE_CurSess"", ""$GEN_AutoSaveSuffix""); $DYN_InpSessLay = ""$PRE_CurSessMaster""; load(""$GEN_CurScript"", ""_Layout-Save""); wait 400; status ""Layout of session  '$PRE_CurSessMaster'  saved successfully"";<crlf>";
+						$Menu = $Menu."-"<crlf 2>;
+						$Menu = $Menu."Note: Load a Session With Layout To Access More Options"<crlf 2>;
+			// -----------------------
+					} else {
+						$Menu = $Menu."&Delete Complete Layout of Current Session|:del"<crlf>."  if (getkey(""XTRA-Toolbar"", ""Layout "".replace($PRE_CurSess, $GEN_AutoSaveSuffix), ""$GEN_Ini"")) {toolbar(getkey(""XTRA-Toolbar"", ""Layout ¦‡¦-Default-¦‡¦"", ""$GEN_Ini""));} load(""$GEN_CurScript"", ""_Layout-Reset""); global $DYN_InpSessLay; $DYN_InpSessLay = ""$PRE_CurSessLay""; load(""$GEN_CurScript"", ""_Layout-Delete""); wait 400; status ""Layout of session  '$PRE_CurSessLay'  deleted successfully"";<crlf>";
+						$Menu = $Menu."Update Layout of Current Session|$GEN_Icon_Lay"<crlf>."  global $DYN_InpSessLay; $DYN_InpSessLay = ""$PRE_CurSessLay""; if $PRE_Xtra_Toolbar {setkey(toolbar(), ""XTRA-Toolbar"", ""Layout $PRE_CurSessLay"", ""$GEN_Ini"");}; load(""$GEN_CurScript"", ""_Layout-Save""); wait 400; status ""Layout of session  '$PRE_CurSessLay'  updated successfully"";<crlf>";
+						$Menu = $Menu."-"<crlf 2>;
+			// -----------------------
+						if (getkey("XTRA-Toolbar", "Layout ".replace($PRE_CurSess, $GEN_AutoSaveSuffix), $GEN_Ini)) {
+							$Menu = $Menu."Remove Toolbar from Layout of Current Session|:del"<crlf>."  toolbar(getkey(""XTRA-Toolbar"", ""Layout ¦‡¦-Default-¦‡¦"", ""$GEN_Ini"")); setkey("""", ""XTRA-Toolbar"", ""Layout $PRE_CurSessLay"", ""$GEN_Ini""); wait 400; status ""Toolbar removed from layout successfully"";<crlf>";
+							$Menu = $Menu."Update &Toolbar in Layout of Current Session  (Suffixed:  ¶  )|:ctb59"<crlf>."    setkey(toolbar(), ""XTRA-Toolbar"", ""Layout $PRE_CurSessLay"", ""$GEN_Ini""); wait 400; status ""Toolbar updated (in layout) successfully"";<crlf>";
+						} else {
+							$Menu = $Menu."Save &Toolbar with Layout of Current Session  (Will Be Suffixed:  ¶  )|:ctb59"<crlf>."    setkey(toolbar(), ""XTRA-Toolbar"", ""Layout $PRE_CurSessLay"", ""$GEN_Ini""); wait 400; status ""Toolbar saved (in layout) successfully"";<crlf>";
+						}
+/* Xtras-WIP
+					$Menu = $Menu."--"<crlf 2>;
+			// -----------------------
+					if ($PRE_CurSessLay && $STG_EnableLayouts) {
+						$Menu = $Menu."[C] Save Copy of &Catalog with Layout of Current Session|$GEN_Icon_Lay"<crlf>."  <crlf>";
+						$Menu = $Menu."Remove &Catalog from Layout of Current Session|:del"<crlf>."  <crlf>";
+					} else {
+						$Menu = $Menu."[C] Save Copy of &Catalog with Layout of Current Session|$GEN_Icon_Lay"<crlf>."  <crlf>";
+						$Menu = $Menu."Remove &Catalog from Layout of Current Session|:del"<crlf>."  <crlf>";
+					}
+					$Menu = $Menu."--"<crlf 2>;
+			// -----------------------
+					if ($PRE_CurSessLay && $STG_EnableLayouts) {
+						$Menu = $Menu."[T] Save Copy of &Tags Database with Layout of Current Session|$GEN_Icon_Lay"<crlf>."  <crlf>";
+						$Menu = $Menu."Remove &Tags Database from Layout of Current Session|:del"<crlf>."  <crlf>";
+					} else {
+						$Menu = $Menu."[T] Save Copy of &Tags Database with Layout of Current Session|$GEN_Icon_Lay"<crlf>."  <crlf>";
+						$Menu = $Menu."Remove &Tags Database from Layout of Current Session|:del"<crlf>."  <crlf>";
+					}
+					$Menu = $Menu."--"<crlf 2>;
+			// -----------------------
+					if ($PRE_CurSessLay && $STG_EnableLayouts) {
+						$Menu = $Menu."[F] Save &File Associations with Layout of Current Session|$GEN_Icon_Lay"<crlf>."  <crlf>";
+						$Menu = $Menu."Remove &File Associations from Layout of Current Session|:del"<crlf>."  <crlf>";
+					} else {
+						$Menu = $Menu."[F] Save &File Associations with Layout of Current Session|$GEN_Icon_Lay"<crlf>."  <crlf>";
+						$Menu = $Menu."Remove &File Associations from Layout of Current Session|:del"<crlf>."  <crlf>";
+					}
+*/
+					}
+				} else {
+					$Menu = $Menu."Note: Enable 'Use Layouts' to Access More Options"<crlf 2>;
+				}
+			} else {
+					$Menu = $Menu."Note: Load a Valid Session To Access More Options"<crlf 2>;
+			}
+		}
+// -----------------------------------------------------------------<
+	} else {
+		$Menu = $Menu."$STX_EnableLayouts: OFF"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 0; $OPT_Setting = ""EnableLayouts"";<crlf>  load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+		$Menu = $Menu."-"<crlf 2>;
+		$Menu = $Menu."&Reset Layout to Default|:autorefresh"<crlf>."  global $DYN_InpSessLay, $DYN_b_InpSessLay;<crlf>  $DYN_InpSessLay = ""¦‡¦-Default-¦‡¦"";";
+		$Menu = $Menu."<crlf>  $DYN_b_InpSessLay = 0; <crlf>  load(""$GEN_CurScript"", ""_Layout-Load""); wait 400; status ""Layout reset to default"";<crlf>";
+		$Menu = $Menu."Update Default Layout|$GEN_Icon_Lay"<crlf>."  global $DYN_InpSessLay; $DYN_InpSessLay = ""¦‡¦-Default-¦‡¦""; load(""$GEN_CurScript"", ""_Layout-Save""); wait 400; status ""Default layout saved successfully"";<crlf>";
+	}
+
+	$Menu = $Menu."-"<crlf 2>;
+	$Menu = $Menu."Ca&ncel"<crlf>."  status;<crlf>";
+	status;
+	load($Menu, , s);
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_Layout-DefaultSave" 
+
+	global $PRE_CurSess;
+
+	end (($PRE_CurSess Like "*[*") || ($PRE_CurSess Like "*]*")), "<crlf 2>  Sessions with  '['  or  ']'  can't have a layout.    <crlf 2>--->  Save under a different name.    <crlf 2>";
+	$DYN_InpSessLay = $PRE_CurSess;
+	load "$GEN_CurScript", "_Layout-Save";
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_Layout-ToolbarSave"
+
+	global $GEN_Ini,
+				 $PRE_CurSessLay;
+
+	$Section = "Layout ".$PRE_CurSessLay;
+	setkey(toolbar(), "XTRA-Toolbar", "Layout ".$PRE_CurSessLay, $GEN_Ini);
+
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+/* ######################################################################################### */
+/* ########################*/
+/* ###  Layout Manager  ###*/
+/* ########################*/
+
+
+"_Layout-Load"
+
+	global $GEN_Ini, $GEN_LayON, $STG_LayFallbackDef, $STG_StdResetWithLay, $STG_InfoPanelPreview,
+				 $PRE_CurSessLay;
+	global $DYN_InpSess, $DYN_InpSessLay, $DYN_b_InpSessLay;
+
+	set $LayAct;
+
+//	Columns Manager Initiation
+//	$XY_SaveNoCol = getkey("RememberListSettingsPerTabApply", "Settings");
+//	$XY_SaveNoCol =  (($XY_SaveNoCol < 4) || (($XY_SaveNoCol > 7) && ($XY_SaveNoCol < 12)))? 1 : 0;
+
+	$Section = "Layout ".$DYN_InpSessLay;
+
+	// If entering a layout-session, leaving a Non-layout-session and 'Fallback to Default' OFF
+	if ($GEN_LayON && !$PRE_CurSessLay && $DYN_b_InpSessLay && !$STG_LayFallbackDef) {
+		$DYN_InpSessLay = "¦‡¦-Last-¦‡¦";     // remember fallback layout (i.e. current unsaved layout)
+		sub "_Layout-Save";                   // to be loaded next time a non-layout-session is loaded
+	}
+
+	setlayout(getkey("FullLayout", $Section, $GEN_Ini));
+
+	// Show sort headers in all views
+	// $v = what is ('v'isually exists); $I = what must be (read from 'I'ni);
+	$v_SH  = get("#312");  $I_SH  = getkey("ShowSortHeaders", $Section, $GEN_Ini);
+	$LayAct = ($v_SH != $I_SH + 0)? "$LayAct#312;"  : $LayAct;		// +0 needed for update when $I-SH key doesn't exist
+
+	// Force Preview visible
+	$LayAct = (get("#665") && $STG_InfoPanelPreview)? "$LayAct#1021;#1023;" : $LayAct;	// #1021 switch to prevent IP close when preview already visible
+
+	if $LayAct {load($LayAct,,"s");}
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_Layout-Save"
+
+	global $GEN_Ini;
+	global $DYN_InpSessLay;
+
+	$Section = "Layout ".$DYN_InpSessLay;
+
+	setkey(setlayout(), "FullLayout", $Section, $GEN_Ini);
+	setkey(get("#312"),  "ShowSortHeaders", $Section, $GEN_Ini);
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_Layout-Rename"
+
+	global $GEN_Ini,
+				 $PRE_CurSessLay;
+	global $DYN_InpSessLay;
+
+// Read old layout
+	$LayIni = replace(readfile("$GEN_Ini"), $PRE_CurSessLay,"¦‡¦-#########-¦‡¦");
+	$LayIni = regexreplace($LayIni, "^(.|\n)*(\[Layout ¦‡¦-#########-¦‡¦\][^\[]*)(.|\n)*$", "$2");
+
+// Delete old layout
+	$Section = "Layout ".$PRE_CurSessLay;
+	setkey("", "", $Section, $GEN_Ini);
+
+// Save renamed layout
+	$LayIni = replace($LayIni, "¦‡¦-#########-¦‡¦", $DYN_InpSessLay);
+	writefile("$GEN_Ini", $LayIni, "a");
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_Layout-Delete"
+
+	global $GEN_Ini;
+	global $DYN_InpSessLay;
+
+	$Section = "Layout ".$DYN_InpSessLay;
+	setkey("", "", $Section, $GEN_Ini);
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+"_Layout-Reset" // ONLY USED for direct acces via CKS or Menu
+
+	global $GEN_CurScript, $PRE_CurSessLay, $DYN_InpSessLay, $DYN_b_InpSessLay, $DYN_InfoPanel;
+
+	if !$GEN_CurScript { // If accessed externally from Catalog, CKS, UDC, etc.
+		sub "_Initialize";
+	}
+
+	if ((caller("caption") Like "&Reset*") || (caller("caption") Like "*Delete Complete Layout*")) { // If accessed internaly
+		$DYN_InpSessLay = "¦‡¦-Default-¦‡¦";
+	} else {
+		$DYN_InpSessLay = !($PRE_CurSessLay)? "¦‡¦-Default-¦‡¦" : $PRE_CurSessLay;
+	}
+
+	$DYN_b_InpSessLay = 0;
+	load($GEN_CurScript, "_Layout-Load");
+	wait 400;
+	status "Layout reset to default";
+
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+/* ######################################################################################### */
+/* #######################*/
+/* ###  Options Menus  ###*/
+/* #######################*/
+
+
+"_Options-Menu"
+
+	global $GEN_CurScript, $GEN_Ini, $GEN_LayON, $GEN_SM_Version,
+				 $PRE_CurSess, $PRE_CurSessLay, $PRE_l_AvailSess, $PRE_n_AvailSess, $GEN_TmpSession, $GEN_Icon_Lay;
+	global $PRE_CurAutoSave, $PRE_AutoSave, $GEN_AutoSaveSuffix;
+	global $STG_EnableLayouts, $STG_AutoOptimizeTree, $STG_AutoSave, $STG_Confirmation, $STG_SessionListOnTop, $STG_InfoPanelPreview, $STG_Xtras, $STG_LayFallbackDef, $STG_StdResetWithLay;
+	global $STX_EnableLayouts, $STX_AutoOptimizeTree, $STX_AutoSave, $STX_Confirmation, $STX_SessionListOnTop, $STX_InfoPanelPreview, $STX_Xtras, $STX_LayFallbackDef, $STX_StdResetWithLay;
+
+	$Menu = "";
+
+// ------------------------------------------------------<> Delete temporary session
+/*	if (strpos($PRE_l_AvailSess, $GEN_TmpSession) != -1) {
+		if (replace($PRE_CurSess, $GEN_AutoSaveSuffix) != $GEN_TmpSession) {
+			$Menu = $Menu."Delete Temporary Session|:del"<crlf>."  		delete 1, 0, ""<xydata>\Panes\§1§_$GEN_TmpSession|<xydata>\Panes\§2§_$GEN_TmpSession""; if ($GEN_TmpSession == $PRE_AutoSave) {delete 1, 0, ""<xydata>\Panes\§1§_$GEN_TmpSession$GEN_AutoSaveSuffix|<xydata>\Panes\§2§_$GEN_TmpSession$GEN_AutoSaveSuffix"";};<crlf>";
+			$Menu = $Menu."  if getkey("""", ""Layout "".replace(""$GEN_TmpSession"", ""$GEN_AutoSaveSuffix""), ""$GEN_Ini"") {global $DYN_InpSessLay; $DYN_InpSessLay = ""$GEN_TmpSession""; load ""$GEN_CurScript"", ""_Layout-Delete"";}; if getkey(""Script"", ""$GEN_TmpSession"", ""$GEN_Ini"")) {setkey("""", """", ""$GEN_TmpSession"", ""$GEN_Ini"");}; wait 300; status ""Temporary Session deleted successfully"";<crlf>";
+		} else {
+			$Menu = $Menu."Delete Temporary Session (Not Possible When Temporary Session is Active)|:del"<crlf 2>;
+		}
+	} else {
+		$Menu = $Menu."Delete Temporary Session|:del"<crlf 2>;
+	}*/
+// ------------------------------------------------------<> Associate script with session
+	if (replace($PRE_CurSess, $GEN_AutoSaveSuffix) != $GEN_TmpSession) {
+		$AutoScriptedSess = ($STG_AutoSave && $PRE_CurAutoSave)? $PRE_CurAutoSave : $PRE_CurSess;
+		$ScriptEdition = "  if ($Script != ""Cancel"") {if $Script {setkey(""$Script"", ""Script"", ""$AutoScriptedSess"", ""$GEN_Ini""); wait 300; status ""Script associated successfully"";} else {setkey("""", """", ""$AutoScriptedSess"", ""$GEN_Ini""); wait 300; status ""Script association removed successfully"";}}<crlf>";
+		if getkey("Script", "$AutoScriptedSess", $GEN_Ini) {
+			$Menu = $Menu."Edit Script Associated with Current Session (Suffixed:  ®  )|:steps"<crlf>."  		$Script = input(""Edit Script Associated with Session: '$AutoScriptedSess'"", """.'<crlf>• Enter script directly, preceded by   ""::""   <crlf>- Ex:       ::msg ""Hello World"";    <crlf 2>• Or enter name of script file, with or without label.   <crlf>- Ex1:      RunAntivirus.xys   <crlf>- Ex2:      ""RunApp.xys"", ""My Antivirus""   <crlf 2>• Leave empty to remove script association from session<crlf>'.""", getkey(""Script"", ""$AutoScriptedSess"", ""$GEN_Ini""), , ""Cancel"");<crlf>";
+			$Menu = $Menu$ScriptEdition;
+		} else {
+			$Menu = $Menu."Associate Script with Current Session (Will Be Suffixed:  ®  )|:steps"<crlf>."  		$Script = input(""Associate Script with Session: '$AutoScriptedSess'"", """.'<crlf>• Enter script directly, preceded by   ""::""   <crlf>- Ex:       ::msg ""Hello World"";    <crlf 2>• Or enter name of script file, with or without label.   <crlf>- Ex1:      RunAntivirus.xys   <crlf>- Ex2:      ""RunApp.xys"", ""My Antivirus""   <crlf>'.""", , , ""Cancel"");<crlf>";
+			$Menu = $Menu$ScriptEdition;
+		}
+	} else {
+		$Menu = $Menu."Associate Script with Current Session (Not Available for Temporary Session)|:steps"<crlf 2>;
+	}
+// ------------------------------------------------------<> Reorder session list
+	if ($PRE_n_AvailSess > 1) {
+		$Menu = $Menu."Reorder List of Sessions|:viewlist"<crlf>."  load(""$GEN_CurScript"", ""_ReorderSessionList"");<crlf>";
+		$Menu = $Menu."  global $DYN_SessionsOrder; setkey(""$DYN_SessionsOrder"", ""SessionsOrder"", ""General"", ""$GEN_Ini""); wait 500; status ""Sessions reordered successfully"";}<crlf>";
+	} else {
+		$Menu = $Menu."Reorder List of Sessions|:viewlist"<crlf 2>;
+	}
+	$Menu = $Menu."-"<crlf 2>;
+// ------------------------------------------------------<> Auto Actions
+	if $STG_AutoOptimizeTree {
+		$Menu = $Menu."$STX_AutoOptimizeTree||2"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 1;<crlf>  $OPT_Setting = ""AutoOptimizeTree""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+	} else {
+		$Menu = $Menu."$STX_AutoOptimizeTree"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 0;<crlf>  $OPT_Setting = ""AutoOptimizeTree""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+	}
+	if $STG_AutoSave {
+		$Menu = $Menu."$STX_AutoSave||2"<crlf>;
+	 	$Menu = $Menu."  load(""$GEN_CurScript"", ""_Reset""); delete 1, 0, ""<xydata>\Panes\§1§_$PRE_AutoSave$GEN_AutoSaveSuffix|<xydata>\Panes\§2§_$PRE_AutoSave$GEN_AutoSaveSuffix"";<crlf>";
+		$Menu = $Menu."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 1;<crlf>  $OPT_Setting = ""AutoSave""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+	} else {
+		$Menu = $Menu."$STX_AutoSave"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 0;<crlf>  $OPT_Setting = ""AutoSave""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+	}
+	$Menu = $Menu."-"<crlf 2>;
+// ------------------------------------------------------<> Layout
+	if $GEN_LayON {
+		if $STG_InfoPanelPreview {
+			$Menu = $Menu."$STX_InfoPanelPreview||2"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 1;<crlf>  $OPT_Setting = ""InfoPanelPreview""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+		} else {
+			$Menu = $Menu."$STX_InfoPanelPreview"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 0;<crlf>  $OPT_Setting = ""InfoPanelPreview""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+		}
+		if $STG_Xtras {
+			$Menu = $Menu."$STX_Xtras||2"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 1;<crlf>  $OPT_Setting = ""Xtras""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+		} else {
+			$Menu = $Menu."$STX_Xtras"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 0;<crlf>  $OPT_Setting = ""Xtras""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+		}
+		if $STG_LayFallbackDef {
+			$Menu = $Menu."$STX_LayFallbackDef||2"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 1;<crlf>  $OPT_Setting = ""LayFallbackDef""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+		} else {
+			$Menu = $Menu."$STX_LayFallbackDef"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 0;<crlf>  $OPT_Setting = ""LayFallbackDef""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+		}
+		$Menu = $Menu."$STX_StdResetWithLay"<crlf 2>;
+	} else {
+		$Menu = $Menu."$STX_Xtras"<crlf 2>;
+		$Menu = $Menu."$STX_InfoPanelPreview"<crlf 2>;
+		$Menu = $Menu."$STX_LayFallbackDef"<crlf 2>;
+		if $STG_StdResetWithLay {
+			$Menu = $Menu."$STX_StdResetWithLay||2"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 1;<crlf>  $OPT_Setting = ""StdResetWithLay""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+		} else {
+			$Menu = $Menu."$STX_StdResetWithLay"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 0;<crlf>  $OPT_Setting = ""StdResetWithLay""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+		}
+	}
+	$Menu = $Menu."-"<crlf 2>;
+// ------------------------------------------------------<> Interface
+	if $STG_Confirmation {
+		$Menu = $Menu."$STX_Confirmation||2"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 1;<crlf>  $OPT_Setting = ""Confirmation""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+	} else {
+		$Menu = $Menu."$STX_Confirmation"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 0;<crlf>  $OPT_Setting = ""Confirmation""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+	}
+	if $STG_SessionListOnTop {
+		$Menu = $Menu."$STX_SessionListOnTop||2"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 1;<crlf>  $OPT_Setting = ""SessionListOnTop""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+	} else {
+		$Menu = $Menu."$STX_SessionListOnTop"<crlf>."  global $OPT_b_State, $OPT_Setting; $OPT_b_State = 0;<crlf>  $OPT_Setting = ""SessionListOnTop""; load(""$GEN_CurScript"", ""_Options-Settings"");<crlf>";
+	}
+	$Menu = $Menu."-"<crlf 2>;
+// ------------------------------------------------------<> Reduce flickering
+	if !getkey("TabsetsNoPaneActivation", "Settings") {
+		$Menu = $Menu."Reduce Flic&kering...|%winsysdir%\ieframe.dll /62"<crlf>."  load(""$GEN_CurScript"", ""_Options-Tweak"");<crlf>";
+	} else {
+		$Menu = $Menu."Flickering is reduced||2"<crlf 2>;
+	}
+	$Menu = $Menu."-"<crlf 2>;
+// ------------------------------------------------------<>
+	$Menu = $Menu."&Help - [Session Manager v$GEN_SM_Version]|:info"<crlf>."  load(""$GEN_CurScript"", ""_Help"");<crlf>";
+	$Menu = $Menu."-"<crlf 2>;
+	$Menu = $Menu."Ca&ncel"<crlf>."  status;<crlf>";
+	status;
+	load($Menu, , s);
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_Options-Settings"
+
+	global $GEN_Ini;
+	global $OPT_b_State, $OPT_Setting;
+
+	if $OPT_b_State {
+		setkey("0", $OPT_Setting, "Settings", $GEN_Ini);
+		$d = "disabled";
+	} else {
+		setkey("1", $OPT_Setting, "Settings", $GEN_Ini);
+		$d = "enabled";
+	}
+	if ($OPT_Setting == "Confirmation") {
+		$status1 = "'Confirmation dialog' $d successfully"; $status2 = "Confirmation";
+	} elseif ($OPT_Setting == "SessionListOnTop") { 
+		$status1 = "'List of sessions on top' $d successfully"; $status2 = "Session list on top";
+	} elseif ($OPT_Setting == "AutoOptimizeTree") {
+		$status1 = "'Auto-optimization of tree' $d successfully"; $status2 = "Auto-Optimize Tree";
+	} elseif ($OPT_Setting == "EnableLayouts") {
+		$status1 = "'Use Layouts' $d successfully"; $status2 = "Layout";
+	} elseif ($OPT_Setting == "LayFallbackDef") {
+		$status1 = "'Layout fallback to default' $d successfully"; $status2 = "Layout fallback";
+	} elseif ($OPT_Setting == "StdResetWithLay") {
+		$status1 = "'Reset layout on session change' $d successfully"; $status2 = "Reset layout";
+	} elseif ($OPT_Setting == "InfoPanelPreview") {
+		$status1 = "'Activate preview on layout load' $d successfully"; $status2 = "Activate preview";
+	} elseif ($OPT_Setting == "Xtras") {
+		$status1 = "'Extras layout tools' $d successfully"; $status2 = "Extras layout tools";
+	} elseif ($OPT_Setting == "AutoSave") {
+		$status1 = "'Autosave' $d successfully"; $status2 = "Autosave";
+	}
+	if (getkey($OPT_Setting, "Settings", $GEN_Ini) != $OPT_b_State) {
+		wait 400;
+		status $status1;
+	} else {
+		msg "<crlf 2>  Couldn't access INI file:   <crlf 2>  $GEN_INI   <crlf 2>  ".$status2." setting unchanged.   <crlf>";
+		wait 400;
+		status $status2." setting unchanged", "883333", "stop";
+	}
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_Options-Tweak"
+
+// Compatibility with updates from old XY versions (pane deactivation tweak)
+
+	if confirm("<crlf 2>A tweak is required for a smoother experience (less flickering):   <crlf 2>      TabsetsNoPaneActivation   <crlf 2>It is enabled by default on XYplorer installs, but is currently disabled.  <crlf>Do you want to activate it now? (recommended)  <crlf 2>---> Your current configuration will be saved and XYplorer will restart.   <crlf 2>• Note: You can still activate it later in<crlf>   Options  ><crlf>   Reduce Flickering...   <crlf 2>") {
+		#193; // Save configuration
+		setkey("1", "TabsetsNoPaneActivation", "Settings");
+		status "Tweak 'TabsetsNoPaneActivation' activated successfully";
+		wait 50;
+		#190; // Restart without saving
+	} else {
+		status "Tweak  'TabsetsNoPaneActivation'  unchanged", , "stop";
+	}
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+
+"_About"
+
+	global $GEN_SM_Version, $GEN_CurScript, $GEN_Ini, $GEN_LayUsed,
+				 $PRE_CurSess, $PRE_CurSessInv, $PRE_SessTab1, $PRE_SessTab2;
+	global $DYN_InpSessLay;
+
+	$d_SM_Version = "Session Manager v$GEN_SM_Version  <crlf>---------------------------<crlf 2>";
+
+	if ($PRE_CurSess) {
+		$SessStatus = $d_SM_Version."You're currently using session:   <crlf 2>      $PRE_CurSess  ";
+	} elseif ($PRE_CurSessInv) {
+		$SessStatus = $d_SM_Version."You're currently using session:   <crlf 2>      $PRE_CurSessInv   <crlf 2>but you've inverted the tabsets.   <crlf 2>--->  It would be wise to save it to another name.  ";
+	} elseif ($PRE_SessTab1 && $PRE_SessTab2) {
+		$SessStatus = $d_SM_Version."You've mixed your sessions.   <crlf 3>Your first tabset is from session: <crlf>      $PRE_SessTab1   <crlf 2>Your second tabset is from session: <crlf>      $PRE_SessTab2  ";
+	} elseif ($PRE_SessTab1 && !$PRE_SessTab2) {
+		$SessStatus = $d_SM_Version."You're not using a full session.   <crlf 3>Your first tabset is from session: <crlf>      $PRE_SessTab1   <crlf 2>Your second tabset is a regular tabset: <crlf>      ".gettoken(<xypane2>, -1, "\")."  ";
+	} elseif (!$PRE_SessTab1 && $PRE_SessTab2) {
+		$SessStatus = $d_SM_Version."You're not using a full session.   <crlf 3>Your first tabset is a regular tabset: <crlf>      ".gettoken(<xypane1>, -1, "\")."   <crlf 2>Your second tabset is from session: <crlf>      $PRE_SessTab2  ";
+	} else {
+		$SessStatus = $d_SM_Version."You're not using a session but two different tabsets.   <crlf 3>Your first tabset is: <crlf>      ".gettoken(<xypane1>, -1, "\")."   <crlf 2>Your second tabset is: <crlf>      ".gettoken(<xypane2>, -1, "\")."  ";
+	}
+
+// Check orphan tabsets previously belonging to sessions (e.g. '§1§_MySession' present but not '§2§_MySession')
+	$l_AllTabsets = folderreport(dirsrel, r, <xydata>."\Panes", , , "|")."|";
+	status "Session Manager", , "progress";
+	set $OrphSess; set $l_OrphSess;
+	foreach ($tsession, $l_AllTabsets, "|") {
+		if ($tsession && ($tsession Like "*§1§_*")) {
+			$tsession = replace($tsession, "§1§_", "");
+			if ($l_AllTabsets == replace($l_AllTabsets, "§2§_".$tsession."|", "")) {
+				$i++; $OrphSess = $OrphSess."    §1§_".$tsession."   <crlf 2>";
+				$l_OrphSess = $l_OrphSess."§1§_".$tsession."|";
+			}
+		} elseif ($tsession Like "*§2§_*") {
+			$tsession = replace($tsession, "§2§_", "");
+			if ($l_AllTabsets == replace($l_AllTabsets, "§1§_".$tsession."|", "")) {
+				$i++; $OrphSess = $OrphSess."    §2§_".$tsession."   <crlf 2>";
+				$l_OrphSess = $l_OrphSess."§2§_".$tsession."|";
+			}
+		}
+	}
+
+// Clean orphan layouts automatically
+	if $GEN_LayUsed {
+		$l_LayIni = regexreplace(readfile("$GEN_Ini"), "\n(\w|\s).*\r", ""); // Remove everything but sections
+		$l_LayIni = regexreplace($l_LayIni, "(\[General|\[Settings|.*¦‡¦)\]\r\n", ""); // Remove SessionManager Data
+		$l_LayIni = regexreplace($l_LayIni, "\[Layout\s([^\]]+)\]\r\n", "$1|"); // Keep only session names
+		foreach ($tlayout, $l_LayIni, "|") {
+			if ($tlayout && ($l_AllTabsets == regexreplace($l_AllTabsets, "§(1|2)§_".$tlayout."|", ""))) { // Layout doesn't have a single corresponding session tabset
+				$DYN_InpSessLay = $tlayout;
+				load "$GEN_CurScript", "_Layout-Delete";
+			}
+		}
+	}
+
+	if ($i > 0) {
+		$i = ($i > 1)? "s are orphans" : " is an orphan";
+		if (confirm("<crlf 2>$SessStatus<crlf 2>                _________________________    <crlf 3>The following tabset$i,   <crlf>  and can no longer be used in a session:   <crlf 2>$OrphSess<crlf>--->  Do you want to open the tabsets folder (in a new tab)?   <crlf 2>")) {
+			#340; #858; #523; // Open tabsets folder in new tab
+			#1016; selectitems $l_OrphSess;
+		}
+	} else {
+		msg "<crlf 2>$SessStatus<crlf 2>";
+	}
+	status , , "ready";
+
+
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+
+/* ######################################################################################### */
+/* ######################################################################################### */
+/* ######################################################################################### */
+/* ########################*/
+/* ########  help  ########*/
+/* ########################*/
+
+
+"_Help" // --- WORK IN PROGRESS ---
+
+	global $GEN_SM_Version, $STX_EnableLayouts, $STX_Confirmation, $STX_InfoPanelPreview, $STX_LayFallbackDef, $STX_StdResetWithLay;
+
+	$STX_EnableLayouts = replace($STX_EnableLayouts, "&", "");
+	$STX_Confirmation = replace($STX_Confirmation, "&", "");
+	$STX_InfoPanelPreview = replace($STX_InfoPanelPreview, "&", "");
+	$STX_LayFallbackDef = replace($STX_LayFallbackDef, "&", "");
+	$STX_StdResetWithLay = replace($STX_StdResetWithLay, "&", "");
+
+	$Help = "<html><head><style type='text/css'><crlf>
+		#TB{border: 1px solid #666; font-size:".$BaseFontSize."pt;}<crlf>
+	//	H1,H2,H3,H4{padding-right:".$Margin."px;}<crlf>
+	H1{margin: 40 0 5 0; padding: 5 8; background:#EBEBDD; border:1px solid #999; border-bottom-style:none; font-weight:bold; font-size:110%;}<crlf>
+	H2{padding: 0 10; margin: 10 5; border-bottom: 1px solid #DDD; font-size:90%; line-height:1.5; background:#F4F4F0;}<crlf>
+	H3{padding: 0 10; font-size:85%; line-height:1.2; font-weight: normal;}<crlf>
+	.Indent{padding-left: 10;}<crlf>
+	//	H4{padding-left:".eval($Margin+2*$LeftColSpacing)."px; font-size:70%; line-height:0.7;}<crlf>
+	</style></head><crlf>
+		 <body style='margin: 5px 10px; font-family:Calibri; line-height:1;'><crlf>
+		 <br><crlf><span style='margin-left: 10px; font-size:13pt; padding:3px 15px; background:#333; color:#FFF; font-weight:bold;'>Session Manager &nbsp;&nbsp;-&nbsp;&nbsp; v".$GEN_SM_Version."</span><crlf><br><crlf><br><crlf>
+	 <crlf>";
+
+
+//  $Help =  $Help."<H1>General</H2>";
+	$Help =  $Help."<br><br><div align='center'>--------- ### Work In Progress ### ---------</div><br>";
+	$Help =  $Help."<BR><A TARGET='_blank' CLASS='Indent' STYLE='color: #966;' HREF='http://www.xyplorer.com/xyfc/viewtopic.php?f=7&t=8691'>Session Manager Homepage (Updates and Discussions)</A>";
+// ---------
+	$Help =  $Help."<H1>• Main Concept</H1>";
+	$Help =  $Help."<H3>Each session is composed of two tabsets.<BR>
+			Each tabset has the name of its session,<BR>
+			preceded by '§1§_' for pane 1 and '§2§_' for pane 2.<BR>
+			 <i class='indent'>(e.g. Session 'Work' uses tabsets '§1§_Work' and '§2§_Work')</i></H3>
+		";
+// ---------
+	$Help =  $Help."<H1>• Settings</H1>";
+	$Help =  $Help."<H2>- $STX_EnableLayouts</H2>";
+	$Help =  $Help."<H2>- $STX_Confirmation</H2>";
+	$Help =  $Help."<H2>- $STX_InfoPanelPreview</H2>";
+	$Help =  $Help."<H2>- $STX_LayFallbackDef</H2>";
+	$Help =  $Help."<H2>- $STX_StdResetWithLay</H2>";
+// ---------
+	$Help =  $Help."<crlf></body></html>";
+
+	html($Help, 700, 650, "Session Manager Help");
