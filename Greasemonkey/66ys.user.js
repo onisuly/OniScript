@@ -12,7 +12,7 @@
 */
 var title = document.getElementsByClassName("title")[0].innerHTML;
 var subtitle = title.substring(1, title.length - 1);
-subtitle = subtitle.replace(/\[.+\]/g, "");
+subtitle = subtitle.replace(/\[(第.+季)*.*\]/g, " $1");
 document.getElementsByClassName("title")[0].innerHTML = '<a style="text-decoration:none" target="_blank" href="http://movie.douban.com/subject_search?search_text=' + encodeURI(subtitle) + '" >' + title + '</a>';
 
 /*
@@ -23,14 +23,14 @@ ebox.innerHTML = "云播放";
 ebox.style.cssText = "display:none;position:absolute;cursor:pointer;padding:2px 10px;text-align:center;border:1px solid #e0e0e0;background:#fff;border-radius:5px";
 
 ebox.onmouseover = function() {
-    ebox.style.background = "#5CB542";
-    ebox.style.color = "#fff";
-    ebox.style.display = "block";
+    this.style.background = "#5CB542";
+    this.style.color = "#fff";
+    this.style.display = "block";
 };
 ebox.onmouseout = function() {
-    ebox.style.background = "#fff";
-    ebox.style.color = "";
-    ebox.style.display = "none";
+    this.style.background = "#fff";
+    this.style.color = "";
+    this.style.display = "none";
 };
 document.body.appendChild(ebox);
 
