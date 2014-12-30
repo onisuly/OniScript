@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        66ys
-// @description 66ys功能增强
+// @description 66影视功能增强
 // @namespace   onisuly
 // @include     http://www.66ys.cc/*
 // @version     2014.12.11
