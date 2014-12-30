@@ -49,7 +49,7 @@
         writefile($pythonpath, $python);
         $newfilename = runret("cmd /c python $pythonpath <curbase>", , , 0);
         $newfilename = substr($newfilename, 0, -2);
-        renameitem($newfilename);
+        renameitem($newfilename, , 1);
         delete(0, 0, $pythonpath);
     }
     else {
