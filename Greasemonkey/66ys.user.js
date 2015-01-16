@@ -1,9 +1,9 @@
-// ==UserScript==
+﻿// ==UserScript==
 // @name        66ys
 // @description 66影视功能增强
 // @namespace   onisuly
 // @include     http://www.66ys.cc/*
-// @version     2014.12.11
+// @version     2015.01.11
 // @grant       none
 // @run-at      document-end
 // ==/UserScript==
@@ -46,7 +46,7 @@ function createBox( element, link ) {
         ebox.onclick = (function() {
             window.open("http://www.dychao.com/play.html?url=" + encodeURI(link), "_blank");
         });
-        ebox.style.left = boxleft + this.offsetWidth + "px";
+        ebox.style.left = boxleft - 2 + this.offsetWidth + "px";
         ebox.style.top = boxtop -10 + "px";
         ebox.style.display = "block";
     };
