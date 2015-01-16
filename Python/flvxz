@@ -133,7 +133,7 @@ def merge(title, format):
         parameter = '-idx -ovc copy -oac mp3lame -lameopts abr:br=128 -o'
     cmd = "mencoder %s %s %s" % ( parameter, videopath+"/%s.%s"%(title, format), videopath+"/%s_*.%s"%(title, format) )
     os.system(cmd)
-    #os.system( "rm %s" % (videopath+"/%s_*.%s"%(title, format)) )
+    os.system( "rm %s" % (videopath+"/%s_*.%s"%(title, format)) )
 
 def main(url):
     encode_url = base64.urlsafe_b64encode(url.replace('://', ':##'))
