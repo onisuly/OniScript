@@ -125,15 +125,14 @@ def pickup(j):
         sys.exit()
 
 def merge(title, format):
-    title = title.replace(' ', '\ ').replace('(', '\(').replace(')', '\)').replace('[', '\[').replace(']', '\]')
     videopath = os.path.join(os.getcwd(), title)
     if format == 'flv':
         parameter = '-of lavf -oac mp3lame -lameopts abr:br=128 -ovc copy -o'
     elif format == 'mp4':
         parameter = '-idx -ovc copy -oac mp3lame -lameopts abr:br=128 -o'
-    cmd = r'mencoder %s %s %s' % ( parameter, videopath+'/%s.%s'%(title, format), videopath+'/%s_*.%s'%(title, format) )
+    cmd = "mencoder %s '%s' '%s'*%s" % ( parameter, videopath+'/'+title+'.'+format, videopath+'/'+title+'_', format )
     os.system(cmd)
-    os.system( 'rm %s' % (videopath+'/%s_*.%s'%(title, format)) )
+    os.system( "rm '%s'*%s" % (videopath+'/'+title+'_', format) )
 
 def main(url):
     encode_url = base64.urlsafe_b64encode(url.replace('://', ':##'))

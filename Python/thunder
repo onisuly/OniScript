@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2
 
 import base64, sys, os
 link = base64.b64decode(sys.argv[1][10:])[2:-2]
