@@ -125,15 +125,15 @@ def pickup(j):
         sys.exit()
 
 def merge(title, format):
-    title = title.replace(' ', '\ ').replace('[', '\[').replace(']', '\]')
+    title = title.replace(' ', '\ ').replace('(', '\(').replace(')', '\)').replace('[', '\[').replace(']', '\]')
     videopath = os.path.join(os.getcwd(), title)
     if format == 'flv':
         parameter = '-of lavf -oac mp3lame -lameopts abr:br=128 -ovc copy -o'
     elif format == 'mp4':
         parameter = '-idx -ovc copy -oac mp3lame -lameopts abr:br=128 -o'
-    cmd = "mencoder %s %s %s" % ( parameter, videopath+"/%s.%s"%(title, format), videopath+"/%s_*.%s"%(title, format) )
+    cmd = r'mencoder %s %s %s' % ( parameter, videopath+'/%s.%s'%(title, format), videopath+'/%s_*.%s'%(title, format) )
     os.system(cmd)
-    os.system( "rm %s" % (videopath+"/%s_*.%s"%(title, format)) )
+    os.system( 'rm %s' % (videopath+'/%s_*.%s'%(title, format)) )
 
 def main(url):
     encode_url = base64.urlsafe_b64encode(url.replace('://', ':##'))
@@ -169,7 +169,7 @@ def main(url):
             download(infos)
         n += 1
     if amount > 1:
-        merge( title, i[0][-3:] )
+        merge( title, i[0].split('.')[-1] )
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description='flvxz')
