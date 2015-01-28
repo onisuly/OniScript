@@ -1,0 +1,24 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+
+import pygtk
+pygtk.require('2.0')
+import gtk
+import os
+import urllib
+
+def alert(msg):
+    dialog = gtk.MessageDialog()
+    dialog.set_markup(msg)
+    dialog.run()
+
+def main():
+    filepath = os.environ.get('NAUTILUS_SCRIPT_SELECTED_FILE_PATHS')[:-1]
+    curitem = filepath.split('/')[-1]
+    curpath = filepath[:-len(curitem)]
+    newitem = urllib.unquote( curitem )
+    #alert(curpath+newitem)
+    os.rename(filepath, curpath+newitem)
+
+if __name__ == "__main__":
+    main()
