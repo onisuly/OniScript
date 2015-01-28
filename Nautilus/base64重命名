@@ -13,12 +13,13 @@ def alert(msg):
     dialog.run()
 
 def main():
-    filepath = os.environ.get('NAUTILUS_SCRIPT_SELECTED_FILE_PATHS')[:-1]
-    curitem = filepath.split('/')[-1]
-    curpath = filepath[:-len(curitem)]
-    newitem = urllib.unquote( curitem )
-    #alert(curpath+newitem)
-    os.rename(filepath, curpath+newitem)
+    selected = os.environ.get('NAUTILUS_SCRIPT_SELECTED_FILE_PATHS')
+    files = selected.splitlines()
+    for file in files:
+        curitem = file.split('/')[-1]
+        curpath = file[:-len(curitem)]
+        newitem = urllib.unquote( curitem )
+        os.rename(file, curpath+newitem)
 
 if __name__ == "__main__":
     main()
