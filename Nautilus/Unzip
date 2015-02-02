@@ -1,0 +1,21 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+
+import pygtk
+pygtk.require('2.0')
+import gtk
+import os
+
+def alert(msg):
+    dialog = gtk.MessageDialog()
+    dialog.set_markup(msg)
+    dialog.run()
+
+def main():
+    selected = os.environ.get('NAUTILUS_SCRIPT_SELECTED_FILE_PATHS')
+    files = selected.splitlines()
+    for file in files:
+        os.system('unzip -O CP936 %s' % (file) )
+
+if __name__ == "__main__":
+    main()
