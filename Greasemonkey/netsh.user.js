@@ -2,7 +2,7 @@
 // @name        Netsh
 // @description 禁止Netsh检测ADBlock
 // @namespace   onisuly
-// @include     http://serve.netsh.org/pub/gethosts.php
+// @include     http://serve.netsh.org/pub/ipv4-hosts/
 // @include     http://serve.netsh.org/pub/ipv6-hosts/
 // @version     2015.02.04
 // @grant       none
