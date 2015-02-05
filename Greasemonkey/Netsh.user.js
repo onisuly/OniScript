@@ -1,17 +1,17 @@
 ﻿// ==UserScript==
 // @name        Netsh
-// @description 禁止Netsh检测AdBlock
+// @description Netsh助手
 // @namespace   onisuly
 // @include     http://serve.netsh.org/pub/ipv4-hosts/
 // @include     http://serve.netsh.org/pub/ipv6-hosts/
-// @version     2015.02.06
+// @version     2015.02.05.3
 // @grant       none
 // @run-at      document-start
 // ==/UserScript==
 
-(function (w) {
+(function (w) {  
     // Remove the current jQuery ready code
-    function pre_script_execute_handler (e) {
+    function pre_script_execute_handler (e) {       
         var target = e.target;
         if (target.innerHTML.indexOf("$( document ).ready(") != -1) {
             console.log('Removed ready');
@@ -27,6 +27,15 @@
         console.log('Adding new ready');
         w.$(document).ready(function () {
             console.log('Our ready called');
+
+            //表单
+            for (var i = document.forms[0].elements.length - 1; i >= 0; i--) {
+                document.forms[0].elements[i].disabled = false;
+                document.forms[0].elements[i].checked = true;
+            };
+
+            //说明
+            $(".wttxt")[0].value = unescape( $(".wttxt")[0].value )
 
             $("form#hform").submit(function(){
                 var form = $(this);
