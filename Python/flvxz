@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# vim: set fileencoding=utf8
+# -*- coding: utf-8 -*-
 
 #author：https://github.com/PeterDing/iScript
 #modify：onisuly
@@ -124,15 +124,18 @@ def pickup(j):
         print s % (1, 91, '  !! enter error')
         sys.exit()
 
-def merge(title, format):
-    videopath = os.path.join(os.getcwd(), title)
-    if format == 'flv':
+def merge(title, extension):
+    video = os.path.join(os.getcwd(), title, title)
+    if extension == 'flv':
         parameter = '-of lavf -oac mp3lame -lameopts abr:br=128 -ovc copy -o'
-    elif format == 'mp4':
+    elif extension == 'mp4':
         parameter = '-idx -ovc copy -oac mp3lame -lameopts abr:br=128 -o'
-    cmd = "mencoder %s '%s' '%s'*%s" % ( parameter, videopath+'/'+title+'.'+format, videopath+'/'+title+'_', format )
+    else:
+        return
+    
+    cmd = "mencoder %s '%s' '%s'*%s" % ( parameter, video+'.'+extension, video+'_', extension )
     os.system(cmd)
-    os.system( "rm '%s'*%s" % (videopath+'/'+title+'_', format) )
+    os.system( "rm '%s'*%s" % (video+'_', extension) )
 
 def main(url):
     encode_url = base64.urlsafe_b64encode(url.replace('://', ':##'))
