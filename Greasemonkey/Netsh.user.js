@@ -1,12 +1,18 @@
 ﻿// ==UserScript==
 // @name        Netsh
-// @description Netsh助手
+// @description Netsh助手 for Firefox Only
 // @namespace   onisuly
 // @include     http://serve.netsh.org/pub/ipv4-hosts/
-// @version     2015.02.06
+// @version     2015.02.06.2
 // @grant       none
 // @run-at      document-start
 // ==/UserScript==
+
+/*
+添加下列规则到广告过滤中：
+http://serve.netsh.org/pub/hosts_src/omni.dialog.min.*.js*
+http://serve.netsh.org/pub/ipv4-hosts/hosts_src/script.*.js*
+*/
 
 (function (w) {  
     // Remove the current jQuery ready code
@@ -68,8 +74,8 @@
                     success: function(txt){
                         //$("form#hosts-output-form textarea").css({color: "#FFF"});
                         textarea.text(txt);
-                        //button.attr('disabled', null);
-                        button.attr('value', '完成').remove();
+                        button.attr('disabled', null);
+                        button.attr('value', '立刻获取');
                         hsir.scrollTo($('#hosts-output').prev(), 600);
                         //$(document.body).find(".hosts-mask").fadeIn(2500);
                     }
