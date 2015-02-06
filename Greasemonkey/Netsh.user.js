@@ -3,8 +3,7 @@
 // @description Netsh助手
 // @namespace   onisuly
 // @include     http://serve.netsh.org/pub/ipv4-hosts/
-// @include     http://serve.netsh.org/pub/ipv6-hosts/
-// @version     2015.02.05.3
+// @version     2015.02.06
 // @grant       none
 // @run-at      document-start
 // ==/UserScript==
@@ -37,6 +36,7 @@
             //说明
             $(".wttxt")[0].value = unescape( $(".wttxt")[0].value )
 
+            //广告检测
             $("form#hform").submit(function(){
                 var form = $(this);
                 var button = $("#hbtn");
@@ -76,6 +76,14 @@
                 });
                 return false;
             });
+
+            $('#select-all').click(function() {
+                $("#hosts-content").select();
+                try {
+                    ga('send', 'event', 'button', 'click', 'IPv4-selectAllHostsContent');
+                } catch (e) {}
+            });
+            
         });
     }
 }) (unsafeWindow);
