@@ -8,11 +8,17 @@ import re
 import base64
 import requests
 import os
-import sys
 import argparse
 import random
-from HTMLParser import HTMLParser
+import json
 import select
+from HTMLParser import HTMLParser
+import sys
+reload(sys)
+sys.setdefaultencoding( "utf-8" )
+import pygtk
+pygtk.require('2.0')
+import gtk
 
 s = '\x1b[%d;%dm%s\x1b[0m'       # terminual color template
 parser = HTMLParser()
@@ -48,6 +54,11 @@ ss.headers.update(headers)
 
 wget_template = 'wget -U Mozilla -c -nv -O "%s" "%s"'
 api = 'https://www.flvxz.com/getFlv.php?url=%s'
+
+def alert(msg):
+    dialog = gtk.MessageDialog()
+    dialog.set_markup(msg)
+    dialog.run()
 
 def download(infos):
     if not os.path.exists(infos['dir_']):
@@ -88,7 +99,26 @@ def play(infos):
     else:
         pass
 
+def decrypt(encrypted_cn):
+    c = encrypted_cn.split('}(')
+    x = re.search(r'(\[.+\])\)\);', c[1]).group(1)
+    y = re.search(r'(\[.+\])..\)\);if', c[2]).group(1)
+
+    a, b = json.loads('[' + x + ']')
+    for i in xrange(len(b)):
+        b[i] = a[b[i]]
+    t = ''.join(b[::-1])[8:-1]
+    b = json.loads(t)
+
+    a = json.loads(y)
+    for i in xrange(len(b)):
+        b[i] = a[b[i]]
+    decrypted_cn = ''.join(b[::-1])
+
+    return decrypted_cn
+
 def flvxz_parser(cn):
+    cn = decrypt(cn)
     qualities = re.findall(r'"quality">\[(.+?)\]<', cn)
     if not qualities: return {}
 
@@ -123,8 +153,14 @@ def pickup(j):
     else:
         print s % (1, 91, '  !! enter error')
         sys.exit()
-
 def merge(title, extension):
+    """TODO: Docstring for merge.
+    合并视频文件
+    :title: 视频标题 
+    :extension: 文件扩展名
+    :returns: None
+
+    """
     video = os.path.join(os.getcwd(), title, title)
     if extension == 'flv':
         parameter = '-of lavf -oac mp3lame -lameopts abr:br=128 -ovc copy -o'
@@ -149,7 +185,7 @@ def main(url):
         print s % (1, 91, '  !! Can\'t get videos')
         sys.exit()
 
-    title = re.search(r'media-heading">(.+?)</', cn)
+    title = re.search(r'media-heading">(.+?)</', decrypt(cn))
     title = title.group(1) if title else ''
     yes = True if len(j) > 1 else False
     dir_ = os.path.join(os.getcwd(), title) if yes else os.getcwd()
@@ -171,7 +207,7 @@ def main(url):
             download(infos)
         n += 1
     if amount > 1:
-        merge( title, i[0].split('.')[-1] )
+        merge( title =  title, extension = i[0].split('.')[-1] )
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description='flvxz')
