@@ -4,8 +4,8 @@ import sys, hashlib
 torrent = open( sys.argv[1] )
 try:
     content = torrent.read()
-    position = content.find('4:info')
-    content = content[ position + 6 : -1 ]
+    position = content.find('4:info') + len('4:info')
+    content = content[ position : -1 ]
     magnet = "magnet:?xt=urn:btih:" + hashlib.sha1(content).hexdigest().upper()
     print magnet
 finally:
