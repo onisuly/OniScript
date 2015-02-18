@@ -3,9 +3,10 @@
 // @description Netsh助手 for Firefox Only
 // @namespace   onisuly
 // @include     http://serve.netsh.org/pub/ipv4-hosts/
-// @version     2015.02.06.2
+// @version     2015.02.18
 // @grant       none
 // @run-at      document-start
+// @require     https://raw.githubusercontent.com/dankogai/js-base64/master/base64.min.js
 // ==/UserScript==
 
 /*
@@ -40,7 +41,38 @@ http://serve.netsh.org/pub/ipv4-hosts/hosts_src/script.*.js*
             };
 
             //说明
-            $(".wttxt")[0].value = unescape( $(".wttxt")[0].value )
+            function unicode2Ascii(str){
+                var n = 0;
+                var r = '';
+                var m = 0;
+                //65535
+                for(var i=0;i<str.length;i++){
+                    if(str.charAt(i)==='&'&& i < str.length-1  &&str.charAt(i+1)==='#'){
+                        n=0;
+                        for(var j=0;j<6;j++) {
+                            m = i+2 + j;
+                            if(m >= str.length){
+                                break;
+                            }
+                            if(str.charAt(m)===';'){
+                                n = j;
+                                break;
+                            }
+                        }
+                        if(n===0){
+                            r += str.charAt(i);
+                        }else{
+                            r += String.fromCharCode(parseInt(str.substr(i+2,n)));
+                            i+=n+2;
+                        }
+                    }else{
+                        r += str.charAt(i);
+                    }
+                }
+               
+                return r;
+            }
+            $(".wttxt")[0].value = unicode2Ascii( Base64.decode( $(".wttxt")[0].value ) );
 
             //广告检测
             $("form#hform").submit(function(){
@@ -80,6 +112,7 @@ http://serve.netsh.org/pub/ipv4-hosts/hosts_src/script.*.js*
                         //$(document.body).find(".hosts-mask").fadeIn(2500);
                     }
                 });
+
                 return false;
             });
 
@@ -90,6 +123,20 @@ http://serve.netsh.org/pub/ipv4-hosts/hosts_src/script.*.js*
                 } catch (e) {}
             });
             
+
+            //Twitter
+            $("#hform").append("<input id='btnTwitter' type='button' class='wtbtn' style='margin-left:10px' value='Twitter Hosts' onclick=''>")
+            $("#btnTwitter").click(function() {
+                //var a = $('a')[0];  
+                var a = $("<a href='http://serve.netsh.org/pub/ipv4-hosts/pagead2.googlesyndication.com/NYSE_TWTR.php?passcode=" + pass + "&validate=" + validate + "' target='_blank'></a>").get(0);  
+                  
+                var e = document.createEvent('MouseEvents');
+      
+                e.initEvent('click', true, true);  
+                a.dispatchEvent(e);  
+                console.log('event has been changed');  
+            });
+            $("#hosts-select").append("<iframe src='http://serve.netsh.org/pub/ipv4-hosts/pagead2.googlesyndication.com/NYSE_TWTR.php?passcode=" + pass + "&validate=" + validate + "' height='312px' width='914px'></iframe");
         });
     }
 }) (unsafeWindow);
