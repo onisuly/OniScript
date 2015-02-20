@@ -6,6 +6,7 @@ pygtk.require('2.0')
 import gtk
 import os
 import urllib
+import chardet
 
 def alert(msg):
     dialog = gtk.MessageDialog()
@@ -18,7 +19,8 @@ def main():
     for file in files:
         curitem = file.split('/')[-1]
         curpath = file[:-len(curitem)]
-        newitem = urllib.unquote( curitem )
+        encoding = chardet.detect(urllib.unquote(curitem))['encoding']
+        newitem = urllib.unquote( curitem ).decode(encoding)
         os.rename(file, curpath+newitem)
 
 if __name__ == "__main__":
