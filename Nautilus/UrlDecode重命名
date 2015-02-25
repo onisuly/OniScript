@@ -16,12 +16,15 @@ def alert(msg):
 def main():
     selected = os.environ.get('NAUTILUS_SCRIPT_SELECTED_FILE_PATHS')
     files = selected.splitlines()
-    for file in files:
-        curitem = file.split('/')[-1]
-        curpath = file[:-len(curitem)]
-        encoding = chardet.detect(urllib.unquote(curitem))['encoding']
-        newitem = urllib.unquote( curitem ).decode(encoding)
-        os.rename(file, curpath+newitem)
+    try:
+        for file in files:
+            curitem = file.split('/')[-1]
+            curpath = file[:-len(curitem)]
+            encoding = chardet.detect(urllib.unquote(curitem))['encoding']
+            newitem = urllib.unquote( curitem ).decode(encoding)
+            os.rename(file, curpath+newitem)
+    except Exception, e:
+        alert( str(e) )
 
 if __name__ == "__main__":
     main()
