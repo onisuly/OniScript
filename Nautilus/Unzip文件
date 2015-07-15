@@ -1,21 +1,77 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-import pygtk
-pygtk.require('2.0')
+__author__ = 'onisuly'
+
 import gtk
 import os
+import pipes
+
 
 def alert(msg):
     dialog = gtk.MessageDialog()
     dialog.set_markup(msg)
     dialog.run()
 
+
+def response_to_dialog(entry, dialog, response):
+    dialog.response(response)
+
+
+def get_text(message, label, second_message='', message_type=gtk.MESSAGE_QUESTION):
+    # base this on a message dialog
+    dialog = gtk.MessageDialog(
+        None,
+        gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+        message_type,
+        gtk.BUTTONS_OK,
+        None)
+    dialog.set_markup(message)
+    # create the text input field
+    entry = gtk.Entry()
+    # allow the user to press enter to do ok
+    entry.connect('activate', response_to_dialog, dialog, gtk.RESPONSE_OK)
+    # in order to turn this into a password dialog
+    entry.set_visibility(False)
+    # create a horizontal box to pack the entry and a label
+    hbox = gtk.HBox()
+    hbox.pack_start(gtk.Label(label), False, 5, 5)
+    hbox.pack_end(entry)
+    # some secondary text
+    dialog.format_secondary_markup(second_message)
+    # add it and show it
+    dialog.vbox.pack_end(hbox, True, True, 0)
+    dialog.show_all()
+    # go go go
+    run = dialog.run()
+    text = entry.get_text()
+    dialog.destroy()
+    if run == gtk.RESPONSE_OK:
+        return text
+    else:
+        return None
+
+
 def main():
     selected = os.environ.get('NAUTILUS_SCRIPT_SELECTED_FILE_PATHS')
     files = selected.splitlines()
     for file in files:
-        os.system('unzip -O CP936 %s' % (file) )
+        unzip(pipes.quote(file))
 
-if __name__ == "__main__":
+
+def unzip(file):
+    info = os.popen('unzip -t %s' % file).read()
+    if 'unable to get password' in info:
+        password = pipes.quote(get_text('Password required for %s' % file, 'Password:'))
+        info = os.popen('unzip -P %s -t %s' % (password, file)).read()
+        while 'files skipped because of incorrect password.' in info:
+            password = pipes.quote(get_text('Password required for %s' % file, 'Password:',
+                                            '<span color=\'#d45d48\'>Wrong password.</span>', gtk.MESSAGE_ERROR))
+            info = os.popen('unzip -P %s -t %s' % (password, file)).read()
+        os.system('unzip -O CP936 -P %s %s' % (password, file))
+    else:
+        os.system('unzip -O CP936 %s' % file)
+
+
+if __name__ == '__main__':
     main()
