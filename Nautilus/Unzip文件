@@ -52,13 +52,6 @@ def get_text(message, label, second_message='', message_type=gtk.MESSAGE_QUESTIO
         return None
 
 
-def main():
-    selected = os.environ.get('NAUTILUS_SCRIPT_SELECTED_FILE_PATHS')
-    files = selected.splitlines()
-    for file in files:
-        unzip(pipes.quote(file))
-
-
 def unzip(file):
     info = os.popen('unzip -t %s' % file).read()
     if 'unable to get password' in info:
@@ -73,5 +66,11 @@ def unzip(file):
         os.system('unzip -O CP936 %s' % file)
 
 
+def main():
+    selected = os.environ.get('NAUTILUS_SCRIPT_SELECTED_FILE_PATHS')
+    files = selected.splitlines()
+    for file in files:
+        unzip(pipes.quote(file))
+        
 if __name__ == '__main__':
     main()
