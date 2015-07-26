@@ -13,9 +13,9 @@ if ( window.location.href.match(/http[s]?:\/\/pan.baidu.com\/wap\/share\/home.+/
 else if ( window.location.href.match(/http[s]?:\/\/pan.baidu.com\/wap\/link.+/) ) {
     window.location.href = window.location.href.replace("wap", "share");
 }
-else if ( window.location.href.match(/http[s]?:\/\/pan.baidu.com\/wap\/album\/file.+/) ) {
+else if ( window.location.href.match(/http[s]?:\/\/pan.baidu.com\/wap\/album\/.+/) ) {
     window.location.href = window.location.href.replace("wap", "pcloud");
 }
-/*else if ( window.location.href.match(/http[s]?:\/\/pan.baidu.com\/wap\/shareview.+/) ) {
+else if ( window.location.href.match(/http[s]?:\/\/pan.baidu.com\/wap\/shareview.+/) ) {
     window.location.href = window.location.href.replace("shareview", "link");
-}*/
+}
