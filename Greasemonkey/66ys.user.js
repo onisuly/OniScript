@@ -1,8 +1,8 @@
-﻿// ==UserScript==
+// ==UserScript==
 // @name        66ys
 // @description 66影视功能增强
 // @namespace   onisuly
-// @include     http://www.66ys.cc/*
+// @include     http://www.dygang.com/*
 // @version     2015.01.11
 // @grant       none
 // @run-at      document-end
@@ -10,7 +10,7 @@
 /*
 **查询豆瓣电影信息
 */
-var title = document.getElementsByClassName("title")[0].innerHTML;
+var title = "【" + document.getElementsByClassName("title")[0].childNodes[1].innerHTML + "】";
 var subtitle = title.substring(1, title.length - 1);
 subtitle = subtitle.replace(/\[(第.+季)*.*\]/g, " $1");
 document.getElementsByClassName("title")[0].innerHTML = '<a style="text-decoration:none" target="_blank" href="http://movie.douban.com/subject_search?search_text=' + encodeURI(subtitle) + '" >' + title + '</a>';
@@ -44,7 +44,7 @@ function createBox( element, link ) {
             boxtop += etmp.offsetTop;
         }
         ebox.onclick = (function() {
-            window.open("http://www.dychao.com/play.html?url=" + encodeURI(link), "_blank");
+            window.open("http://www.ruyiba.cn/index.php#!u=" + encodeURI(link), "_blank");
         });
         ebox.style.left = boxleft - 2 + this.offsetWidth + "px";
         ebox.style.top = boxtop -10 + "px";
