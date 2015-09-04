@@ -3,7 +3,7 @@
 // @description 66影视功能增强
 // @namespace   onisuly
 // @include     http://www.dygang.com/*
-// @version     2015.01.11
+// @version     2015.09.04
 // @grant       none
 // @run-at      document-end
 // ==/UserScript==
