@@ -8,4 +8,4 @@ import os
 selected = os.environ.get('NAUTILUS_SCRIPT_SELECTED_FILE_PATHS')
 files = selected.splitlines()
 for file in files:
-    os.system('ln -s %s ~/Desktop' % file)
+    os.system('ln -s "%s" ~/Desktop' % file)
