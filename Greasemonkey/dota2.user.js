@@ -26,7 +26,7 @@ var steamId64 = document.getElementsByName("abuseID")[0].value;
 var dotaId = steamId64.substring(1, steamId64.length) - 6561197960265728;
 
 /*Dota2 ID*/
-var eDropDownMenu = document.getElementsByClassName("popup_body popup_menu shadow_content")[2];
+var eDropDownMenu = document.getElementsByClassName("popup_body popup_menu shadow_content")[0];
 var eMenuItem = document.createElement("a");
 eMenuItem.className = "popup_menu_item";
 eMenuItem.href = "#";
@@ -43,7 +43,7 @@ var eMenuItem2 = document.createElement("a");
 eMenuItem2.className = "popup_menu_item";
 eMenuItem2.href = "#";
 eMenuItem2.onclick = function() {
-    window.open("http://zh.dotabuff.com/players/" + dotaId);
+    window.open("http://www.dotabuff.com/players/" + dotaId);
     HideMenu( 'profile_action_dropdown_link', 'profile_action_dropdown' );
     return false;
 }
