@@ -1,0 +1,9 @@
+! Linux中国
+linux.cn##a[href*="linux.cn/go/"]
+
+! 百度网盘
+baidu.com##a[class*="ad-platform"]
+
+! 音悦台
+yinyuetai.com##a[class*="video_ab"]
+
