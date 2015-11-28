@@ -7,3 +7,6 @@ baidu.com##a[class*="ad-platform"]
 ! 音悦台
 yinyuetai.com##a[class*="video_ab"]
 
+! 土豆
+tudou.com##a[id="downloadItudou"]
+
