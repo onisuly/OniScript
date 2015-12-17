@@ -2,6 +2,7 @@
 // @name        pan.baidu
 // @namespace   onisuly
 // @include     http://pan.baidu.com/wap/*
+// @include     https://pan.baidu.com/wap/*
 // @version     2015.06.17
 // @grant       none
 // @run-at      document-end

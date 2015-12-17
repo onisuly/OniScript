@@ -4,7 +4,9 @@
 // @namespace   onisuly
 // @description 刀塔2 Steam社区增强
 // @include     http://steamcommunity.com/id/*
+// @include     https://steamcommunity.com/id/*
 // @include     http://steamcommunity.com/profiles/*
+// @include     https://steamcommunity.com/profiles/*
 // @version     2014.11.14
 // @run-at      document-end
 // @grant       none
