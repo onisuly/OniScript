@@ -10,6 +10,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,8 +53,8 @@ public class Main {
             for ( int i = 0; i < nodes.length(); ++i ) {
                 JSONObject node = nodes.getJSONObject(i);
                 String code = node.getString("code");
-                int date = node.getInt("date");
-                LocalDateTime localDateTime = LocalDateTime.ofEpochSecond(date, 0, ZoneOffset.UTC);
+                LocalDateTime localDateTime = LocalDateTime.ofEpochSecond(node.getInt("date"), 0, ZoneOffset.UTC);
+                String date = localDateTime.format( DateTimeFormatter.ofPattern("yyyyMMddhhmmss") );
                 boolean is_video = node.getBoolean("is_video");
 
                 if ( is_video ) {
@@ -65,13 +66,13 @@ public class Main {
                             JSONObject videoObject = new JSONObject(videoJson);
                             String video_url = videoObject.getJSONObject("entry_data").getJSONArray("PostPage")
                                     .getJSONObject(0).getJSONObject("media").getString("video_url");
-                            new Thread( () -> downloadFile(video_url, dir, localDateTime.toString(), proxy) ).run();
+                            new Thread( () -> downloadFile(video_url, dir, date, proxy) ).run();
                         }
                     }).run();
                 }
                 else {
                     String display_src = node.getString("display_src");
-                    new Thread( () -> downloadFile(display_src, dir, localDateTime.toString(), proxy) ).run();
+                    new Thread( () -> downloadFile(display_src, dir, date, proxy) ).run();
                 }
             }
         } while ( has_next_page );
