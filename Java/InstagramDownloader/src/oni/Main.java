@@ -22,7 +22,7 @@ public class Main {
                 }
                 break;
             case 3:
-                if ( "--http_proxy".equals(args[1]) ) {
+                if ( "--http_proxy".equalsIgnoreCase(args[1]) ) {
                     try {
                         String hostname = args[2].split(":")[0];
                         int port = Integer.parseInt(args[2].split(":")[1]);
@@ -43,6 +43,8 @@ public class Main {
     }
 
     private static void printUsage() {
-        System.out.println("Usage: InstagramDownloader username [--http_proxy hostname:port]");
+        System.out.println(
+                "Usage: java -jar InstagramDownloader.jar username [--http_proxy hostname:port]" +
+                "Example: java -jar InstagramDownloader.jar marcella_the_naeun --http_proxy 127.0.0.1:1081");
     }
 }
