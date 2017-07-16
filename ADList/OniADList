@@ -21,3 +21,6 @@ www.dygang.com/d/*.js
 
 ! SteamCN 蒸汽动力
 steamcn.com##div[class*="stcn_"]
+
+! 电影首发站
+www.dysfz.cc##div[class*="adv"]
