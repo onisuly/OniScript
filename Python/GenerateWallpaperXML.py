@@ -19,8 +19,10 @@ xml_obj.write("<background>")
 xml_obj.write(header)
 xml_obj.write("<!-- This animation will start at midnight. -->")
 
+firstfile = ''
 lastfile = ''
-files = [f for f in os.listdir('.') if ( f != os.path.basename(__file__) and f != xmlfilename)]
+files = [f for f in os.listdir('.') if ( os.path.isfile(f) and f != os.path.basename(__file__) and f != xmlfilename)]
+firstfile = files[0]
 for f in files:
     if lastfile == '':
         lastfile = f
@@ -48,6 +50,6 @@ xml_obj.write('''
     <from>%s</from>
     <to>%s</to>
   </transition>
-'''%(duration, os.path.join( os.getcwd(), lastfile ), transition, os.path.join( os.getcwd(), lastfile ), os.path.join( os.getcwd(), os.listdir('.')[0] )))
+'''%(duration, os.path.join( os.getcwd(), lastfile ), transition, os.path.join( os.getcwd(), lastfile ), os.path.join( os.getcwd(), firstfile )))
 xml_obj.write("</background>")
 xml_obj.close()
