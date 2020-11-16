@@ -18,17 +18,14 @@ if resp.status_code == 200:
     wallpaper_path = json_response['images'][0]['url']
     parsed = urlparse.urlparse(wallpaper_path.split('/')[-1])
     filename = parse_qs(parsed.query)['id'][0]
-    wallpaper_uri = BING_URI_BASE + wallpaper_path
 
-    if not os.path.exists(WALLPAPER_PATH):
-        try:
-            os.makedirs(WALLPAPER_PATH)
-        except OSError as exc:
-            if exc.errno != errno.EEXIST:
-                raise
-
-    response = requests.get(wallpaper_uri)
+    pathlib.Path(WALLPAPER_PATH).mkdir(parents=True, exist_ok=True)
     wallpaper_file = os.path.join(WALLPAPER_PATH, filename)
+    if pathlib.Path(wallpaper_file).is_file():
+        exit(0)
+
+    wallpaper_uri = BING_URI_BASE + wallpaper_path
+    response = requests.get(wallpaper_uri)
     if resp.status_code == 200:
         with open(wallpaper_file, 'wb') as f:
             f.write(response.content)
