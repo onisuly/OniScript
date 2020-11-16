@@ -17,7 +17,7 @@ if resp.status_code == 200:
     json_response = json.loads(resp.content)
     wallpaper_path = json_response['images'][0]['url']
     parsed = urlparse.urlparse(wallpaper_path.split('/')[-1])
-    filename = parse_qs(parsed.query)['rf'][0]
+    filename = parse_qs(parsed.query)['id'][0]
     wallpaper_uri = BING_URI_BASE + wallpaper_path
 
     if not os.path.exists(WALLPAPER_PATH):
